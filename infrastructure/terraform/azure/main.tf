@@ -163,6 +163,10 @@ locals {
   resource_group_name = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].name : azurerm_resource_group.main[0].name
   resource_group_location = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].location : azurerm_resource_group.main[0].location
   
+  # PostgreSQL Server (existing or created)
+  postgres_server_id = var.import_existing_postgres ? data.azurerm_postgresql_flexible_server.existing[0].id : azurerm_postgresql_flexible_server.main[0].id
+  postgres_server_fqdn = var.import_existing_postgres ? data.azurerm_postgresql_flexible_server.existing[0].fqdn : azurerm_postgresql_flexible_server.main[0].fqdn
+  
   # VNet and Public IP
   vnet_id = var.import_existing_vnet ? data.azurerm_virtual_network.existing[0].id : azurerm_virtual_network.main[0].id
   vnet_name = var.import_existing_vnet ? data.azurerm_virtual_network.existing[0].name : azurerm_virtual_network.main[0].name
@@ -193,13 +197,16 @@ resource "azurerm_private_dns_zone_virtual_network_link" "main" {
   virtual_network_id    = local.vnet_id
 }
 
-# Data source for existing PostgreSQL server (if importing)
+# Data source for existing PostgreSQL server (try to find it)
+# This will fail silently if server doesn't exist, which is handled by count
 data "azurerm_postgresql_flexible_server" "existing" {
   count               = var.import_existing_postgres ? 1 : 0
   name                = "codeforces-postgres"
   resource_group_name = local.resource_group_name
 }
 
+# PostgreSQL server: create if doesn't exist, otherwise use existing
+# Set import_existing_postgres=true if server already exists, false to create new
 resource "azurerm_postgresql_flexible_server" "main" {
   count                = var.import_existing_postgres ? 0 : 1
   name                   = "codeforces-postgres"
@@ -222,9 +229,11 @@ resource "azurerm_postgresql_flexible_server" "main" {
   # Dependencies are handled automatically through private_dns_zone_id reference
 }
 
+# PostgreSQL server ID and FQDN are now in main locals block above
+
 resource "azurerm_postgresql_flexible_server_database" "main" {
   name      = "codeforces_db"
-  server_id = var.import_existing_postgres ? data.azurerm_postgresql_flexible_server.existing[0].id : azurerm_postgresql_flexible_server.main[0].id
+  server_id = local.postgres_server_id
   charset   = "UTF8"
   collation = "en_US.utf8"
 }
