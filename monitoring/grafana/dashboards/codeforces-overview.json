@@ -1,0 +1,85 @@
+{
+  "dashboard": {
+    "title": "Codeforces Platform Overview",
+    "tags": ["codeforces", "microservices"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(auth_service_requests_total[5m]))",
+            "legendFormat": "Auth Service"
+          },
+          {
+            "expr": "sum(rate(contest_service_requests_total[5m]))",
+            "legendFormat": "Contest Service"
+          },
+          {
+            "expr": "sum(rate(submission_service_requests_total[5m]))",
+            "legendFormat": "Submission Service"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(auth_service_requests_total{status=~\"5..\"}[5m]))",
+            "legendFormat": "Auth Errors"
+          },
+          {
+            "expr": "sum(rate(contest_service_requests_total{status=~\"5..\"}[5m]))",
+            "legendFormat": "Contest Errors"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Response Time (p95)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, auth_service_request_duration_seconds_bucket)",
+            "legendFormat": "Auth Service p95"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Active Submissions",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(submission_service_active_submissions)",
+            "legendFormat": "Active"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Code Executions",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(execution_service_executions_total)",
+            "legendFormat": "Total Executions"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 8}
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "version": 1
+  }
+}
+

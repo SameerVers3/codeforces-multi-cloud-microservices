@@ -1,0 +1,54 @@
+# Circuit Breaker using Istio VirtualService
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: auth-service-circuit-breaker
+spec:
+  hosts:
+    - auth-service
+  http:
+    - match:
+        - headers:
+            x-circuit-breaker:
+              exact: "enabled"
+      fault:
+        abort:
+          percentage:
+            value: 0
+      route:
+        - destination:
+            host: auth-service
+          weight: 100
+    - route:
+        - destination:
+            host: auth-service
+          weight: 100
+      timeout: 5s
+      retries:
+        attempts: 3
+        perTryTimeout: 2s
+        retryOn: 5xx,gateway-error,connect-failure,refused-stream
+
+---
+# DestinationRule for Circuit Breaker
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: auth-service-destination
+spec:
+  host: auth-service
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 10
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 2
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 50
+

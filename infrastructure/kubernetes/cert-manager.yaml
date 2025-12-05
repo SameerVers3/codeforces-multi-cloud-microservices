@@ -1,0 +1,32 @@
+# Cert-Manager ClusterIssuer for Let's Encrypt
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@codeforces.example.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+
+---
+# Certificate for services
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: codeforces-tls-cert
+  namespace: default
+spec:
+  secretName: codeforces-tls-secret
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - codeforces.example.com
+    - api.codeforces.example.com
+

@@ -1,0 +1,206 @@
+
+services:
+  # Databases
+  postgres:
+    image: postgres:15-alpine
+    container_name: codeforces-postgres
+    environment:
+      POSTGRES_USER: codeforces
+      POSTGRES_PASSWORD: codeforces_dev
+      POSTGRES_DB: codeforces_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codeforces"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: codeforces-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: codeforces-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: codeforces
+      RABBITMQ_DEFAULT_PASS: codeforces_dev
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Services
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: codeforces-auth
+    environment:
+      DATABASE_URL: postgresql://codeforces:codeforces_dev@postgres:5432/codeforces_db
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: dev-secret-key-change-in-production
+      JWT_ALGORITHM: HS256
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    ports:
+      - "8001:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./services/auth-service:/app
+
+  contest-service:
+    build:
+      context: ./services/contest-service
+      dockerfile: Dockerfile
+    container_name: codeforces-contest
+    environment:
+      DATABASE_URL: postgresql://codeforces:codeforces_dev@postgres:5432/codeforces_db
+      REDIS_URL: redis://redis:6379/0
+      AUTH_SERVICE_URL: http://auth-service:8000
+    ports:
+      - "8002:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    volumes:
+      - ./services/contest-service:/app
+
+  submission-service:
+    build:
+      context: ./services/submission-service
+      dockerfile: Dockerfile
+    container_name: codeforces-submission
+    environment:
+      DATABASE_URL: postgresql://codeforces:codeforces_dev@postgres:5432/codeforces_db
+      RABBITMQ_URL: amqp://codeforces:codeforces_dev@rabbitmq:5672/
+      AUTH_SERVICE_URL: http://auth-service:8000
+      CONTEST_SERVICE_URL: http://contest-service:8000
+      EXECUTION_SERVICE_URL: http://execution-service:8000
+    ports:
+      - "8003:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      contest-service:
+        condition: service_started
+    volumes:
+      - ./services/submission-service:/app
+
+  execution-service:
+    build:
+      context: ./services/execution-service
+      dockerfile: Dockerfile
+    container_name: codeforces-execution
+    environment:
+      RABBITMQ_URL: amqp://codeforces:codeforces_dev@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/0
+      DOCKER_HOST: unix:///var/run/docker.sock
+    ports:
+      - "8004:8000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./services/execution-service:/app
+    privileged: true
+
+  scoring-service:
+    build:
+      context: ./services/scoring-service
+      dockerfile: Dockerfile
+    container_name: codeforces-scoring
+    environment:
+      DATABASE_URL: postgresql://codeforces:codeforces_dev@postgres:5432/codeforces_db
+      REDIS_URL: redis://redis:6379/0
+      RABBITMQ_URL: amqp://codeforces:codeforces_dev@rabbitmq:5672/
+    ports:
+      - "8005:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./services/scoring-service:/app
+
+  leaderboard-service:
+    build:
+      context: ./services/leaderboard-service
+      dockerfile: Dockerfile
+    container_name: codeforces-leaderboard
+    environment:
+      DATABASE_URL: postgresql://codeforces:codeforces_dev@postgres:5432/codeforces_db
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8006:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./services/leaderboard-service:/app
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend/nextjs-app
+      dockerfile: Dockerfile
+    container_name: codeforces-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8001
+      NEXT_PUBLIC_AUTH_SERVICE_URL: http://localhost:8001
+      NEXT_PUBLIC_CONTEST_SERVICE_URL: http://localhost:8002
+      NEXT_PUBLIC_SUBMISSION_SERVICE_URL: http://localhost:8003
+      NEXT_PUBLIC_LEADERBOARD_SERVICE_URL: http://localhost:8006
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - contest-service
+      - submission-service
+      - leaderboard-service
+    # Remove volume mounts for production - use built image
+    # volumes:
+    #   - ./frontend/nextjs-app:/app
+    #   - /app/node_modules
+    #   - /app/.next
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: codeforces-network
+

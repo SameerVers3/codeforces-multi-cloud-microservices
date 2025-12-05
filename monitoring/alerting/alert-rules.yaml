@@ -1,0 +1,80 @@
+groups:
+  - name: codeforces_alerts
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(auth_service_requests_total{status=~"5.."}[5m])) > 0.1
+          OR
+          sum(rate(contest_service_requests_total{status=~"5.."}[5m])) > 0.1
+          OR
+          sum(rate(submission_service_requests_total{status=~"5.."}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Service {{ $labels.service }} has error rate above 10%"
+
+      - alert: ServiceDown
+        expr: |
+          up{job=~"auth-service|contest-service|submission-service|execution-service|scoring-service|leaderboard-service"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} has been down for more than 2 minutes"
+
+      - alert: HighResponseTime
+        expr: |
+          histogram_quantile(0.95, auth_service_request_duration_seconds_bucket) > 1
+          OR
+          histogram_quantile(0.95, contest_service_request_duration_seconds_bucket) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "Service {{ $labels.service }} p95 response time is above 1s"
+
+      - alert: HighMemoryUsage
+        expr: |
+          container_memory_usage_bytes{pod=~"auth-service.*|contest-service.*"} / container_spec_memory_limit_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Pod {{ $labels.pod }} memory usage is above 90%"
+
+      - alert: HighCPUUsage
+        expr: |
+          rate(container_cpu_usage_seconds_total{pod=~"execution-service.*"}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "Pod {{ $labels.pod }} CPU usage is above 80%"
+
+      - alert: DatabaseConnectionFailure
+        expr: |
+          pg_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection failure"
+          description: "PostgreSQL database is unreachable"
+
+      - alert: QueueBacklog
+        expr: |
+          rabbitmq_queue_messages_ready{queue="submissions"} > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High queue backlog"
+          description: "Submission queue has {{ $value }} messages waiting"
+

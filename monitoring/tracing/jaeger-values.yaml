@@ -1,0 +1,40 @@
+agent:
+  enabled: true
+  replicas: 1
+
+collector:
+  enabled: true
+  replicas: 2
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+query:
+  enabled: true
+  replicas: 2
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+storage:
+  type: elasticsearch
+  elasticsearch:
+    host: elasticsearch.logging.svc.cluster.local
+    port: 9200
+    scheme: http
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  hosts:
+    - jaeger.example.com
+
