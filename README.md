@@ -14,9 +14,8 @@ A comprehensive multi-cloud DevOps pipeline for a Codeforces-like competitive pr
 - **Frontend** - Next.js user interface with real-time updates
 
 ### Multi-Cloud Distribution
-- **AWS**: Execution Service, Submission Service (high compute needs)
+- **AWS**: Execution Service, Submission Service, Scoring Service, Leaderboard Service, Frontend (all compute services)
 - **Azure**: Auth Service, Contest Service, Database (managed services)
-- **GCP**: Scoring Service, Leaderboard Service, Frontend (CDN/global distribution)
 
 ## Tech Stack
 

@@ -47,7 +47,9 @@ jobs:
         context: ./services/${{ matrix.service }}
         push: ${{ github.event_name != 'pull_request' }}
         # Use user packages (ghcr.io/USERNAME/package) instead of org packages to avoid permission issues
-        tags: ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-${{ matrix.service }}:${{ github.sha }}
+        tags: |
+          ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-${{ matrix.service }}:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-${{ matrix.service }}:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
         platforms: linux/amd64
@@ -105,7 +107,9 @@ jobs:
       with:
         context: ./frontend/nextjs-app
         push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-frontend:${{ github.sha }}
+        tags: |
+          ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-frontend:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-frontend:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
         platforms: linux/amd64
@@ -189,31 +193,16 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
       continue-on-error: true
     
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-      continue-on-error: true
-    
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-      continue-on-error: true
-    
     - name: Terraform Init
       run: |
         cd infrastructure/terraform/aws && terraform init
         cd ../azure && terraform init
-        cd ../gcp && terraform init
     
     - name: Terraform Plan
       continue-on-error: true
       run: |
         cd infrastructure/terraform/aws && terraform plan -out=tfplan || echo "AWS plan failed"
         cd ../azure && terraform plan -out=tfplan -var="db_admin_login=${{ secrets.DB_ADMIN_LOGIN }}" -var="db_admin_password=${{ secrets.DB_ADMIN_PASSWORD }}" || echo "Azure plan failed"
-        cd ../gcp && terraform plan -out=tfplan -var="gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" || echo "GCP plan failed"
     
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main'
@@ -221,7 +210,6 @@ jobs:
       run: |
         cd infrastructure/terraform/aws && terraform apply -auto-approve tfplan || echo "AWS apply failed"
         cd ../azure && terraform apply -auto-approve tfplan || echo "Azure apply failed"
-        cd ../gcp && terraform apply -auto-approve tfplan || echo "GCP apply failed"
     
     - name: Install kubectl
       uses: azure/setup-kubectl@v3
@@ -230,7 +218,7 @@ jobs:
     - name: Deploy to AWS EKS
       continue-on-error: true
       run: |
-        aws eks update-kubeconfig --name codeforces-execution-cluster --region us-east-1 || echo "AWS EKS config failed"
+        aws eks update-kubeconfig --name codeforces-aws-cluster --region us-east-1 || echo "AWS EKS config failed"
         kubectl apply --validate=false -f infrastructure/kubernetes/base/namespace.yaml || echo "Namespace creation failed"
         kubectl apply --validate=false -f infrastructure/kubernetes/base/ || echo "AWS deployment failed"
         kubectl apply --validate=false -f infrastructure/kubernetes/network-policies.yaml || echo "Network policies failed"
@@ -245,12 +233,4 @@ jobs:
         kubectl apply --validate=false -f infrastructure/kubernetes/network-policies.yaml || echo "Network policies failed"
         kubectl apply --validate=false -f infrastructure/kubernetes/rbac.yaml || echo "RBAC failed"
     
-    - name: Deploy to GCP GKE
-      continue-on-error: true
-      run: |
-        gcloud container clusters get-credentials codeforces-gke-cluster --region us-central1 || echo "GCP GKE config failed"
-        kubectl apply --validate=false -f infrastructure/kubernetes/base/namespace.yaml || echo "Namespace creation failed"
-        kubectl apply --validate=false -f infrastructure/kubernetes/base/ || echo "GCP deployment failed"
-        kubectl apply --validate=false -f infrastructure/kubernetes/network-policies.yaml || echo "Network policies failed"
-        kubectl apply --validate=false -f infrastructure/kubernetes/rbac.yaml || echo "RBAC failed"
 

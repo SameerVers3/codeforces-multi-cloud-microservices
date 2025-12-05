@@ -23,9 +23,9 @@ resource "aws_vpc" "main" {
   }
 }
 
-# EKS Cluster for Execution and Submission Services
+# EKS Cluster for all AWS services (Execution, Submission, Scoring, Leaderboard, Frontend)
 resource "aws_eks_cluster" "main" {
-  name     = "codeforces-execution-cluster"
+  name     = "codeforces-aws-cluster"
   role_arn = aws_iam_role.eks_cluster.arn
   version  = "1.28"
 
@@ -41,6 +41,11 @@ resource "aws_eks_cluster" "main" {
 # IAM Role for EKS Cluster
 resource "aws_iam_role" "eks_cluster" {
   name = "codeforces-eks-cluster-role"
+
+  # Allow Terraform to import existing role if it already exists
+  lifecycle {
+    ignore_changes = [name]
+  }
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

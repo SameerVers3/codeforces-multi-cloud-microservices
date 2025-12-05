@@ -58,34 +58,6 @@ Before deploying infrastructure, you need to set up authentication for each clou
 
    **Note**: You can use either individual secrets (`AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`) or the `AZURE_CREDENTIALS` JSON secret.
 
-### GCP Setup
-
-1. **Install Google Cloud SDK**:
-   ```bash
-   curl https://sdk.cloud.google.com | bash
-   exec -l $SHELL
-   gcloud init
-   ```
-
-2. **Create Service Account**:
-   ```bash
-   gcloud iam service-accounts create terraform-sa \
-     --display-name="Terraform Service Account"
-   
-   gcloud projects add-iam-policy-binding PROJECT_ID \
-     --member="serviceAccount:terraform-sa@PROJECT_ID.iam.gserviceaccount.com" \
-     --role="roles/editor"
-   
-   gcloud iam service-accounts keys create key.json \
-     --iam-account=terraform-sa@PROJECT_ID.iam.gserviceaccount.com
-   ```
-
-3. **Set GitHub Secrets**:
-   - `GCP_PROJECT_ID`: Your GCP project ID
-   - `GCP_SA_KEY`: Base64 encoded service account JSON key
-     ```bash
-     cat key.json | base64 -w 0
-     ```
 
 ## Local Development
 
@@ -100,9 +72,6 @@ terraform init
 cd infrastructure/terraform/azure
 terraform init
 
-# GCP
-cd infrastructure/terraform/gcp
-terraform init
 ```
 
 ### Plan Changes
@@ -116,9 +85,6 @@ terraform plan
 cd infrastructure/terraform/azure
 terraform plan -var="db_admin_login=your_admin" -var="db_admin_password=your_password"
 
-# GCP
-cd infrastructure/terraform/gcp
-terraform plan -var="gcp_project_id=your-project-id"
 ```
 
 ### Apply Changes
@@ -132,16 +98,13 @@ terraform apply
 cd infrastructure/terraform/azure
 terraform apply -var="db_admin_login=your_admin" -var="db_admin_password=your_password"
 
-# GCP
-cd infrastructure/terraform/gcp
-terraform apply -var="gcp_project_id=your-project-id"
 ```
 
 ## CI/CD Deployment
 
 The GitHub Actions workflow automatically:
 
-1. **Initializes Terraform** for all three providers
+1. **Initializes Terraform** for AWS and Azure
 2. **Plans changes** (shows what will be created/modified)
 3. **Applies changes** (only on `main` branch)
 
@@ -160,9 +123,6 @@ Make sure these are set in your repository settings:
 - `DB_ADMIN_LOGIN`
 - `DB_ADMIN_PASSWORD`
 
-**GCP:**
-- `GCP_PROJECT_ID`
-- `GCP_SA_KEY` (base64 encoded JSON)
 
 ## Troubleshooting
 
@@ -196,7 +156,6 @@ Before deploying, estimate costs:
 
 - **AWS EKS**: ~$73/month (cluster) + node costs
 - **Azure AKS**: ~$73/month (cluster) + node costs
-- **GCP GKE**: ~$73/month (cluster) + node costs
 - **PostgreSQL**: ~$50-200/month depending on tier
 - **Load Balancers**: ~$20-50/month each
 
@@ -215,9 +174,6 @@ terraform destroy
 cd infrastructure/terraform/azure
 terraform destroy -var="db_admin_login=your_admin" -var="db_admin_password=your_password"
 
-# GCP
-cd infrastructure/terraform/gcp
-terraform destroy -var="gcp_project_id=your-project-id"
 ```
 
 **Warning**: This will delete all resources. Make sure you have backups!

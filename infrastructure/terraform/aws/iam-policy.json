@@ -134,7 +134,7 @@
         "logs:DeleteLogGroup",
         "logs:PutRetentionPolicy"
       ],
-      "Resource": "arn:aws:logs:*:*:log-group:/aws/eks/codeforces-execution-cluster/*"
+      "Resource": "arn:aws:logs:*:*:log-group:/aws/eks/codeforces-aws-cluster/*"
     },
     {
       "Sid": "AutoScalingManagement",

@@ -44,7 +44,7 @@ resource "azurerm_kubernetes_cluster" "main" {
   default_node_pool {
     name       = "default"
     node_count = 2
-    vm_size    = "Standard_D2s_v3"
+    vm_size    = "standard_dc2s_v3"  # Using available VM size for the subscription
   }
 
   identity {
@@ -52,28 +52,62 @@ resource "azurerm_kubernetes_cluster" "main" {
   }
 }
 
-# PostgreSQL Database
-resource "azurerm_postgresql_server" "main" {
-  name                = "codeforces-postgres"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-
-  administrator_login          = var.db_admin_login
-  administrator_login_password = var.db_admin_password
-
-  sku_name   = "GP_Gen5_2"
-  version    = "11"
-  storage_mb = 51200
-
-  ssl_enforcement_enabled = true
+# PostgreSQL Flexible Server (replaces deprecated azurerm_postgresql_server)
+# Note: Flexible Server requires a dedicated subnet for database
+resource "azurerm_subnet" "postgres" {
+  name                 = "codeforces-postgres-subnet"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["10.1.2.0/24"]
+  
+  delegation {
+    name = "postgres-delegation"
+    service_delegation {
+      name = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
 }
 
-resource "azurerm_postgresql_database" "main" {
-  name                = "codeforces_db"
+resource "azurerm_private_dns_zone" "main" {
+  name                = "codeforces-postgres.postgres.database.azure.com"
   resource_group_name = azurerm_resource_group.main.name
-  server_name         = azurerm_postgresql_server.main.name
-  charset             = "UTF8"
-  collation           = "English_United States.1252"
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "main" {
+  name                  = "codeforces-vnet-link"
+  resource_group_name   = azurerm_resource_group.main.name
+  private_dns_zone_name = azurerm_private_dns_zone.main.name
+  virtual_network_id    = azurerm_virtual_network.main.id
+}
+
+resource "azurerm_postgresql_flexible_server" "main" {
+  name                   = "codeforces-postgres"
+  resource_group_name    = azurerm_resource_group.main.name
+  location               = azurerm_resource_group.main.location
+  version                = "11"
+  delegated_subnet_id    = azurerm_subnet.postgres.id
+  private_dns_zone_id    = azurerm_private_dns_zone.main.id
+  administrator_login    = var.db_admin_login
+  administrator_password = var.db_admin_password
+
+  sku_name = "GP_Standard_D2s_v3"
+
+  storage_mb = 32768
+
+  backup_retention_days        = 7
+  geo_redundant_backup_enabled = false
+
+  depends_on = [azurerm_private_dns_zone_virtual_network_link.main]
+}
+
+resource "azurerm_postgresql_flexible_server_database" "main" {
+  name      = "codeforces_db"
+  server_id = azurerm_postgresql_flexible_server.main.id
+  charset   = "UTF8"
+  collation = "en_US.utf8"
 }
 
 # Load Balancer

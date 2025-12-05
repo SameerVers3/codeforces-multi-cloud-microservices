@@ -43,7 +43,7 @@ After infrastructure is provisioned:
 
 ```bash
 # Configure kubectl for each cluster
-aws eks update-kubeconfig --name codeforces-execution-cluster --region us-east-1
+aws eks update-kubeconfig --name codeforces-aws-cluster --region us-east-1
 az aks get-credentials --resource-group codeforces-rg --name codeforces-aks-cluster
 gcloud container clusters get-credentials codeforces-gke-cluster --region us-central1
 

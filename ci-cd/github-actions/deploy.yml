@@ -87,7 +87,7 @@ jobs:
     - name: Deploy to Kubernetes
       run: |
         # Deploy to AWS EKS
-        aws eks update-kubeconfig --name codeforces-execution-cluster --region us-east-1
+        aws eks update-kubeconfig --name codeforces-aws-cluster --region us-east-1
         kubectl apply -f infrastructure/kubernetes/base/
         
         # Deploy to Azure AKS

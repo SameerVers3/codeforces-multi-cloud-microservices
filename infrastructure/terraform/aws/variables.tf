@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "cluster_name" {
   description = "EKS cluster name"
   type        = string
-  default     = "codeforces-execution-cluster"
+  default     = "codeforces-aws-cluster"
 }
 
 variable "node_instance_type" {

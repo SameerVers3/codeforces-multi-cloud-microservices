@@ -10,7 +10,7 @@ output "aks_cluster_fqdn" {
 
 output "postgresql_fqdn" {
   description = "PostgreSQL FQDN"
-  value       = azurerm_postgresql_server.main.fqdn
+  value       = azurerm_postgresql_flexible_server.main.fqdn
 }
 
 output "lb_public_ip" {

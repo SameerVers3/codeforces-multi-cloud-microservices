@@ -9,18 +9,13 @@ Before deploying, ensure you have:
    - `GITHUB_TOKEN` (automatically provided)
    - `AWS_ACCESS_KEY_ID` (for AWS deployment)
    - `AWS_SECRET_ACCESS_KEY` (for AWS deployment)
-   - `AZURE_CLIENT_ID` (for Azure deployment)
-   - `AZURE_CLIENT_SECRET` (for Azure deployment)
-   - `AZURE_TENANT_ID` (for Azure deployment)
-   - `GCP_PROJECT_ID` (for GCP deployment)
-   - `GCP_SA_KEY` (GCP Service Account JSON key)
+   - `AZURE_CREDENTIALS` (JSON with clientId, clientSecret, subscriptionId, tenantId)
    - `DB_ADMIN_LOGIN` (Database admin username)
    - `DB_ADMIN_PASSWORD` (Database admin password)
 
 3. **Cloud Provider Accounts**:
    - AWS account with appropriate permissions
    - Azure subscription
-   - GCP project
 
 ## GitHub Secrets Setup
 
@@ -50,15 +45,6 @@ az ad sp create-for-rbac --name "codeforces-sp" --role contributor \
 # This outputs JSON with clientId, clientSecret, subscriptionId, tenantId
 ```
 
-### GCP Credentials
-
-1. Create a Service Account in GCP Console
-2. Download the JSON key file
-3. Base64 encode it:
-   ```bash
-   cat service-account-key.json | base64 -w 0
-   ```
-4. Add the base64 string as `GCP_SA_KEY` secret
 
 ## Deployment Steps
 
@@ -104,7 +90,7 @@ After deployment completes:
 #### AWS (Execution & Submission Services)
 ```bash
 # Get EKS cluster credentials
-aws eks update-kubeconfig --name codeforces-execution-cluster --region us-east-1
+aws eks update-kubeconfig --name codeforces-aws-cluster --region us-east-1
 
 # Check pods
 kubectl get pods -n codeforces
