@@ -33,11 +33,7 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
-# Use existing resource group if importing, otherwise use created one
-locals {
-  resource_group_name = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].name : azurerm_resource_group.main[0].name
-  resource_group_location = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].location : azurerm_resource_group.main[0].location
-}
+# Consolidate all locals - will be expanded after all data sources are defined
 
 # Data source for existing virtual network (if importing)
 data "azurerm_virtual_network" "existing" {
@@ -74,23 +70,35 @@ resource "azurerm_public_ip" "main" {
   sku                 = "Standard"
 }
 
-# Use existing VNet and Public IP if importing, otherwise use created ones
-locals {
-  vnet_id = var.import_existing_vnet ? data.azurerm_virtual_network.existing[0].id : azurerm_virtual_network.main[0].id
-  vnet_name = var.import_existing_vnet ? data.azurerm_virtual_network.existing[0].name : azurerm_virtual_network.main[0].name
-  public_ip_id = var.import_existing_public_ip ? data.azurerm_public_ip.existing[0].id : azurerm_public_ip.main[0].id
+# Data source for existing subnet (if importing)
+data "azurerm_subnet" "existing_main" {
+  count                = var.import_existing_subnet_main ? 1 : 0
+  name                 = "codeforces-subnet"
+  resource_group_name  = local.resource_group_name
+  virtual_network_name = local.vnet_name
 }
 
 # Subnet
+# If subnet already exists, set import_existing_subnet_main = true
 resource "azurerm_subnet" "main" {
+  count                = var.import_existing_subnet_main ? 0 : 1
   name                 = "codeforces-subnet"
   resource_group_name  = local.resource_group_name
   virtual_network_name = local.vnet_name
   address_prefixes     = ["10.1.1.0/24"]
 }
 
+# Data source for existing AKS cluster (if importing)
+data "azurerm_kubernetes_cluster" "existing" {
+  count               = var.import_existing_aks_cluster ? 1 : 0
+  name                = "codeforces-aks-cluster"
+  resource_group_name = local.resource_group_name
+}
+
 # AKS Cluster for Auth and Contest Services
+# If AKS cluster already exists, set import_existing_aks_cluster = true
 resource "azurerm_kubernetes_cluster" "main" {
+  count               = var.import_existing_aks_cluster ? 0 : 1
   name                = "codeforces-aks-cluster"
   location            = local.resource_group_location
   resource_group_name = local.resource_group_name
@@ -109,7 +117,16 @@ resource "azurerm_kubernetes_cluster" "main" {
 
 # PostgreSQL Flexible Server (replaces deprecated azurerm_postgresql_server)
 # Note: Flexible Server requires a dedicated subnet for database
+# Data source for existing postgres subnet (if importing)
+data "azurerm_subnet" "existing_postgres" {
+  count                = var.import_existing_subnet_postgres ? 1 : 0
+  name                 = "codeforces-postgres-subnet"
+  resource_group_name  = local.resource_group_name
+  virtual_network_name = local.vnet_name
+}
+
 resource "azurerm_subnet" "postgres" {
+  count                = var.import_existing_subnet_postgres ? 0 : 1
   name                 = "codeforces-postgres-subnet"
   resource_group_name  = local.resource_group_name
   virtual_network_name = local.vnet_name
@@ -126,15 +143,43 @@ resource "azurerm_subnet" "postgres" {
   }
 }
 
-resource "azurerm_private_dns_zone" "main" {
+# Data source for existing private DNS zone (if importing)
+data "azurerm_private_dns_zone" "existing" {
+  count               = var.import_existing_dns_zone ? 1 : 0
   name                = "codeforces-postgres.postgres.database.azure.com"
   resource_group_name = local.resource_group_name
+}
+
+resource "azurerm_private_dns_zone" "main" {
+  count               = var.import_existing_dns_zone ? 0 : 1
+  name                = "codeforces-postgres.postgres.database.azure.com"
+  resource_group_name = local.resource_group_name
+}
+
+# Consolidate all locals
+locals {
+  # Resource Group
+  resource_group_name = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].name : azurerm_resource_group.main[0].name
+  resource_group_location = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].location : azurerm_resource_group.main[0].location
+  
+  # VNet and Public IP
+  vnet_id = var.import_existing_vnet ? data.azurerm_virtual_network.existing[0].id : azurerm_virtual_network.main[0].id
+  vnet_name = var.import_existing_vnet ? data.azurerm_virtual_network.existing[0].name : azurerm_virtual_network.main[0].name
+  public_ip_id = var.import_existing_public_ip ? data.azurerm_public_ip.existing[0].id : azurerm_public_ip.main[0].id
+  
+  # Subnets
+  subnet_main_id = var.import_existing_subnet_main ? data.azurerm_subnet.existing_main[0].id : azurerm_subnet.main[0].id
+  subnet_postgres_id = var.import_existing_subnet_postgres ? data.azurerm_subnet.existing_postgres[0].id : azurerm_subnet.postgres[0].id
+  
+  # DNS Zone
+  dns_zone_id = var.import_existing_dns_zone ? data.azurerm_private_dns_zone.existing[0].id : azurerm_private_dns_zone.main[0].id
+  dns_zone_name = var.import_existing_dns_zone ? data.azurerm_private_dns_zone.existing[0].name : azurerm_private_dns_zone.main[0].name
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "main" {
   name                  = "codeforces-vnet-link"
   resource_group_name   = local.resource_group_name
-  private_dns_zone_name = azurerm_private_dns_zone.main.name
+  private_dns_zone_name = local.dns_zone_name
   virtual_network_id    = local.vnet_id
 }
 
@@ -143,8 +188,8 @@ resource "azurerm_postgresql_flexible_server" "main" {
   resource_group_name    = local.resource_group_name
   location               = local.resource_group_location
   version                = "11"
-  delegated_subnet_id    = azurerm_subnet.postgres.id
-  private_dns_zone_id    = azurerm_private_dns_zone.main.id
+  delegated_subnet_id    = local.subnet_postgres_id
+  private_dns_zone_id    = local.dns_zone_id
   administrator_login    = var.db_admin_login
   administrator_password = var.db_admin_password
 
@@ -167,7 +212,17 @@ resource "azurerm_postgresql_flexible_server_database" "main" {
 
 # Load Balancer
 
+# Data source for existing load balancer (if importing)
+data "azurerm_lb" "existing" {
+  count               = var.import_existing_lb ? 1 : 0
+  name                = "codeforces-lb"
+  resource_group_name = local.resource_group_name
+}
+
+# Load Balancer
+# If load balancer already exists, set import_existing_lb = true
 resource "azurerm_lb" "main" {
+  count               = var.import_existing_lb ? 0 : 1
   name                = "codeforces-lb"
   location            = local.resource_group_location
   resource_group_name = local.resource_group_name

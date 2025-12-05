@@ -52,3 +52,33 @@ variable "import_existing_public_ip" {
   default     = false
 }
 
+variable "import_existing_subnet_main" {
+  description = "Use existing main subnet instead of creating new one (set to true if subnet already exists)"
+  type        = bool
+  default     = false
+}
+
+variable "import_existing_subnet_postgres" {
+  description = "Use existing postgres subnet instead of creating new one (set to true if subnet already exists)"
+  type        = bool
+  default     = false
+}
+
+variable "import_existing_aks_cluster" {
+  description = "Use existing AKS cluster instead of creating new one (set to true if AKS cluster already exists)"
+  type        = bool
+  default     = false
+}
+
+variable "import_existing_dns_zone" {
+  description = "Use existing private DNS zone instead of creating new one (set to true if DNS zone already exists)"
+  type        = bool
+  default     = false
+}
+
+variable "import_existing_lb" {
+  description = "Use existing load balancer instead of creating new one (set to true if load balancer already exists)"
+  type        = bool
+  default     = false
+}
+
