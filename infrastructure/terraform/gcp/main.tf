@@ -111,30 +111,3 @@ resource "google_compute_managed_ssl_certificate" "main" {
   }
 }
 
-# Variables
-variable "gcp_project_id" {
-  description = "GCP Project ID"
-  type        = string
-}
-
-variable "gcp_region" {
-  description = "GCP Region"
-  type        = string
-  default     = "us-central1"
-}
-
-variable "domain_name" {
-  description = "Domain name for SSL certificate"
-  type        = string
-  default     = "codeforces.example.com"
-}
-
-# Outputs
-output "gke_cluster_id" {
-  value = google_container_cluster.main.id
-}
-
-output "load_balancer_ip" {
-  value = google_compute_global_address.main.address
-}
-

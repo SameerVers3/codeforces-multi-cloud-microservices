@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: codeforces
+
+resources:
+  - namespace.yaml
+  - auth-service.yaml
+  - contest-service.yaml
+  - submission-service.yaml
+  - execution-service.yaml
+  - scoring-service.yaml
+  - leaderboard-service.yaml
+  - frontend.yaml
+

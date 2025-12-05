@@ -141,19 +141,3 @@ resource "aws_security_group" "alb" {
   }
 }
 
-# Variables
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
-  default     = "us-east-1"
-}
-
-# Outputs
-output "eks_cluster_id" {
-  value = aws_eks_cluster.main.id
-}
-
-output "alb_dns_name" {
-  value = aws_lb.main.dns_name
-}
-

@@ -97,35 +97,3 @@ resource "azurerm_lb" "main" {
   }
 }
 
-# Variables
-variable "azure_location" {
-  description = "Azure location"
-  type        = string
-  default     = "eastus"
-}
-
-variable "db_admin_login" {
-  description = "Database admin login"
-  type        = string
-  sensitive   = true
-}
-
-variable "db_admin_password" {
-  description = "Database admin password"
-  type        = string
-  sensitive   = true
-}
-
-# Outputs
-output "aks_cluster_id" {
-  value = azurerm_kubernetes_cluster.main.id
-}
-
-output "postgresql_fqdn" {
-  value = azurerm_postgresql_server.main.fqdn
-}
-
-output "lb_public_ip" {
-  value = azurerm_public_ip.main.ip_address
-}
-
