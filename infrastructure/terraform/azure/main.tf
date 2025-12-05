@@ -209,7 +209,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
 
-  depends_on = var.import_existing_dns_vnet_link ? [data.azurerm_private_dns_zone_virtual_network_link.existing[0]] : [azurerm_private_dns_zone_virtual_network_link.main[0]]
+  # Dependencies are handled automatically through private_dns_zone_id reference
 }
 
 resource "azurerm_postgresql_flexible_server_database" "main" {
