@@ -26,7 +26,7 @@ resource "aws_vpc" "main" {
 # EKS Cluster for all AWS services (Execution, Submission, Scoring, Leaderboard, Frontend)
 resource "aws_eks_cluster" "main" {
   name     = "codeforces-aws-cluster"
-  role_arn = aws_iam_role.eks_cluster.arn
+  role_arn = local.eks_cluster_role_arn
   version  = "1.28"
 
   vpc_config {
@@ -38,14 +38,20 @@ resource "aws_eks_cluster" "main" {
   ]
 }
 
-# IAM Role for EKS Cluster
-resource "aws_iam_role" "eks_cluster" {
-  name = "codeforces-eks-cluster-role"
+# Data source to check if IAM role exists (for import handling)
+data "aws_iam_role" "existing_eks_cluster" {
+  count = var.import_existing_iam_role ? 1 : 0
+  name  = "codeforces-eks-cluster-role"
+}
 
-  # Allow Terraform to import existing role if it already exists
-  lifecycle {
-    ignore_changes = [name]
-  }
+# IAM Role for EKS Cluster
+# If role already exists:
+#   1. Set import_existing_iam_role = true, OR
+#   2. Import it: terraform import aws_iam_role.eks_cluster codeforces-eks-cluster-role, OR
+#   3. Delete it: aws iam detach-role-policy --role-name codeforces-eks-cluster-role --policy-arn arn:aws:iam::aws:policy/AmazonEKSClusterPolicy && aws iam delete-role --role-name codeforces-eks-cluster-role
+resource "aws_iam_role" "eks_cluster" {
+  count = var.import_existing_iam_role ? 0 : 1
+  name  = "codeforces-eks-cluster-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -57,11 +63,21 @@ resource "aws_iam_role" "eks_cluster" {
       }
     }]
   })
+
+  tags = {
+    ManagedBy = "Terraform"
+  }
+}
+
+# Use existing role if importing, otherwise use created role
+locals {
+  eks_cluster_role_arn = var.import_existing_iam_role ? data.aws_iam_role.existing_eks_cluster[0].arn : aws_iam_role.eks_cluster[0].arn
 }
 
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
+  count      = var.import_existing_iam_role ? 0 : 1
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks_cluster.name
+  role       = aws_iam_role.eks_cluster[0].name
 }
 
 # Subnets
@@ -110,17 +126,21 @@ resource "aws_route_table_association" "main" {
 }
 
 # Application Load Balancer
+# Note: If your AWS account doesn't have ELB enabled, comment out this resource
+# or contact AWS Support to enable ELB service
 resource "aws_lb" "main" {
+  count              = var.enable_load_balancer ? 1 : 0
   name               = "codeforces-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
+  security_groups    = [aws_security_group.alb[0].id]
   subnets            = aws_subnet.main[*].id
 
   enable_deletion_protection = false
 }
 
 resource "aws_security_group" "alb" {
+  count       = var.enable_load_balancer ? 1 : 0
   name_prefix = "codeforces-alb-"
   vpc_id      = aws_vpc.main.id
 

@@ -10,7 +10,7 @@ output "eks_cluster_endpoint" {
 
 output "alb_dns_name" {
   description = "ALB DNS name"
-  value       = aws_lb.main.dns_name
+  value       = var.enable_load_balancer ? aws_lb.main[0].dns_name : null
 }
 
 output "vpc_id" {

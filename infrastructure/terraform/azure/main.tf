@@ -12,24 +12,45 @@ provider "azurerm" {
   features {}
 }
 
+# Data source to check if resource group exists (for import handling)
+data "azurerm_resource_group" "existing" {
+  count = var.import_existing_resource_group ? 1 : 0
+  name  = "codeforces-rg"
+}
+
 # Resource Group
+# If resource group already exists:
+#   1. Set import_existing_resource_group = true, OR
+#   2. Import it: terraform import azurerm_resource_group.main /subscriptions/{subscription-id}/resourceGroups/codeforces-rg, OR
+#   3. Delete it: az group delete --name codeforces-rg --yes --no-wait
 resource "azurerm_resource_group" "main" {
+  count    = var.import_existing_resource_group ? 0 : 1
   name     = "codeforces-rg"
   location = var.azure_location
+
+  tags = {
+    ManagedBy = "Terraform"
+  }
+}
+
+# Use existing resource group if importing, otherwise use created one
+locals {
+  resource_group_name = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].name : azurerm_resource_group.main[0].name
+  resource_group_location = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].location : azurerm_resource_group.main[0].location
 }
 
 # Virtual Network
 resource "azurerm_virtual_network" "main" {
   name                = "codeforces-vnet"
   address_space       = ["10.1.0.0/16"]
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = local.resource_group_location
+  resource_group_name = local.resource_group_name
 }
 
 # Subnet
 resource "azurerm_subnet" "main" {
   name                 = "codeforces-subnet"
-  resource_group_name  = azurerm_resource_group.main.name
+  resource_group_name  = local.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.1.1.0/24"]
 }
@@ -37,8 +58,8 @@ resource "azurerm_subnet" "main" {
 # AKS Cluster for Auth and Contest Services
 resource "azurerm_kubernetes_cluster" "main" {
   name                = "codeforces-aks-cluster"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = local.resource_group_location
+  resource_group_name = local.resource_group_name
   dns_prefix          = "codeforces-aks"
 
   default_node_pool {
@@ -56,7 +77,7 @@ resource "azurerm_kubernetes_cluster" "main" {
 # Note: Flexible Server requires a dedicated subnet for database
 resource "azurerm_subnet" "postgres" {
   name                 = "codeforces-postgres-subnet"
-  resource_group_name  = azurerm_resource_group.main.name
+  resource_group_name  = local.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.1.2.0/24"]
   
@@ -73,20 +94,20 @@ resource "azurerm_subnet" "postgres" {
 
 resource "azurerm_private_dns_zone" "main" {
   name                = "codeforces-postgres.postgres.database.azure.com"
-  resource_group_name = azurerm_resource_group.main.name
+  resource_group_name = local.resource_group_name
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "main" {
   name                  = "codeforces-vnet-link"
-  resource_group_name   = azurerm_resource_group.main.name
+  resource_group_name   = local.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.main.name
   virtual_network_id    = azurerm_virtual_network.main.id
 }
 
 resource "azurerm_postgresql_flexible_server" "main" {
   name                   = "codeforces-postgres"
-  resource_group_name    = azurerm_resource_group.main.name
-  location               = azurerm_resource_group.main.location
+  resource_group_name    = local.resource_group_name
+  location               = local.resource_group_location
   version                = "11"
   delegated_subnet_id    = azurerm_subnet.postgres.id
   private_dns_zone_id    = azurerm_private_dns_zone.main.id
@@ -113,16 +134,16 @@ resource "azurerm_postgresql_flexible_server_database" "main" {
 # Load Balancer
 resource "azurerm_public_ip" "main" {
   name                = "codeforces-lb-ip"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = local.resource_group_location
+  resource_group_name = local.resource_group_name
   allocation_method   = "Static"
   sku                 = "Standard"
 }
 
 resource "azurerm_lb" "main" {
   name                = "codeforces-lb"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = local.resource_group_location
+  resource_group_name = local.resource_group_name
   sku                 = "Standard"
 
   frontend_ip_configuration {

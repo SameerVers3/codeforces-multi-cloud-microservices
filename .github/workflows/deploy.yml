@@ -201,8 +201,8 @@ jobs:
     - name: Terraform Plan
       continue-on-error: true
       run: |
-        cd infrastructure/terraform/aws && terraform plan -out=tfplan || echo "AWS plan failed"
-        cd ../azure && terraform plan -out=tfplan -var="db_admin_login=${{ secrets.DB_ADMIN_LOGIN }}" -var="db_admin_password=${{ secrets.DB_ADMIN_PASSWORD }}" || echo "Azure plan failed"
+        cd infrastructure/terraform/aws && terraform plan -out=tfplan -var="import_existing_iam_role=true" || echo "AWS plan failed"
+        cd ../azure && terraform plan -out=tfplan -var="import_existing_resource_group=true" -var="db_admin_login=${{ secrets.DB_ADMIN_LOGIN }}" -var="db_admin_password=${{ secrets.DB_ADMIN_PASSWORD }}" || echo "Azure plan failed"
     
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main'

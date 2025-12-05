@@ -34,3 +34,9 @@ variable "aks_vm_size" {
   default     = "Standard_D2s_v3"
 }
 
+variable "import_existing_resource_group" {
+  description = "Import existing resource group instead of creating new one (set to true if resource group already exists)"
+  type        = bool
+  default     = false
+}
+
