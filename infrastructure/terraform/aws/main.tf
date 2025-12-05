@@ -26,7 +26,7 @@ resource "aws_vpc" "main" {
 # EKS Cluster for all AWS services (Execution, Submission, Scoring, Leaderboard, Frontend)
 resource "aws_eks_cluster" "main" {
   name     = "codeforces-aws-cluster"
-  role_arn = aws_iam_role.eks_cluster.arn
+  role_arn = local.eks_cluster_role_arn
   version  = "1.28"
 
   vpc_config {
@@ -38,11 +38,17 @@ resource "aws_eks_cluster" "main" {
   ]
 }
 
+# Data source for existing IAM role (if importing)
+data "aws_iam_role" "existing_eks_cluster" {
+  count = var.import_existing_iam_role ? 1 : 0
+  name  = "codeforces-eks-cluster-role"
+}
+
 # IAM Role for EKS Cluster
-# If role doesn't exist, Terraform will create it
-# If role already exists, import it: terraform import aws_iam_role.eks_cluster codeforces-eks-cluster-role
+# If role already exists, set import_existing_iam_role = true
 resource "aws_iam_role" "eks_cluster" {
-  name = "codeforces-eks-cluster-role"
+  count = var.import_existing_iam_role ? 0 : 1
+  name  = "codeforces-eks-cluster-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -60,9 +66,15 @@ resource "aws_iam_role" "eks_cluster" {
   }
 }
 
+# Use existing role or created role
+locals {
+  eks_cluster_role_arn = var.import_existing_iam_role ? data.aws_iam_role.existing_eks_cluster[0].arn : aws_iam_role.eks_cluster[0].arn
+}
+
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
+  count      = var.import_existing_iam_role ? 0 : 1
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks_cluster.name
+  role       = aws_iam_role.eks_cluster[0].name
 }
 
 # Subnets

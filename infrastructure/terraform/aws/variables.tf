@@ -28,3 +28,9 @@ variable "enable_load_balancer" {
   default     = false
 }
 
+variable "import_existing_iam_role" {
+  description = "Use existing IAM role instead of creating new one (set to true if IAM role already exists)"
+  type        = bool
+  default     = false
+}
+
