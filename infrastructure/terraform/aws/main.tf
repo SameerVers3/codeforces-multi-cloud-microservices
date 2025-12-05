@@ -41,7 +41,7 @@ resource "aws_eks_cluster" "main" {
     subnet_ids = aws_subnet.main[*].id
   }
 
-  depends_on = var.import_existing_iam_role ? [] : [aws_iam_role_policy_attachment.eks_cluster_policy[0]]
+  # Dependencies are handled automatically through role_arn reference
 }
 
 # Data source for existing IAM role (if importing)
