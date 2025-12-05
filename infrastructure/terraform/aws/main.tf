@@ -12,14 +12,10 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Data source for existing VPC (if importing)
-# Try to find VPC by tags or use existing EKS cluster's VPC
-data "aws_vpc" "existing" {
-  count   = var.import_existing_vpc ? 1 : 0
-  filter {
-    name   = "tag:Name"
-    values = ["codeforces-aws-vpc"]
-  }
+# Get VPC from EKS cluster's subnet (more reliable than filtering by tag)
+data "aws_subnet" "eks_subnet" {
+  count = var.import_existing_vpc ? 1 : 0
+  id    = tolist(data.aws_eks_cluster.existing[0].vpc_config[0].subnet_ids)[0]
 }
 
 # VPC for AWS resources
@@ -35,7 +31,10 @@ resource "aws_vpc" "main" {
   }
 }
 
-# Use existing VPC or created VPC (consolidated into main locals block)
+# Use existing VPC or created VPC
+locals {
+  vpc_id = var.import_existing_vpc ? data.aws_subnet.eks_subnet[0].vpc_id : aws_vpc.main[0].id
+}
 
 # Data source for existing EKS cluster (if importing)
 data "aws_eks_cluster" "existing" {
@@ -87,11 +86,12 @@ resource "aws_iam_role" "eks_cluster" {
 }
 
 # Data source for existing subnets (if importing)
+# Use subnets from EKS cluster directly
 data "aws_subnets" "existing" {
   count = var.import_existing_vpc ? 1 : 0
   filter {
     name   = "vpc-id"
-    values = [data.aws_vpc.existing[0].id]
+    values = [data.aws_subnet.eks_subnet[0].vpc_id]
   }
   filter {
     name   = "tag:Name"
@@ -135,7 +135,7 @@ data "aws_internet_gateway" "existing" {
   count = var.import_existing_vpc ? 1 : 0
   filter {
     name   = "attachment.vpc-id"
-    values = [local.vpc_id]
+    values = [data.aws_subnet.eks_subnet[0].vpc_id]
   }
 }
 

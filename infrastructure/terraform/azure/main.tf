@@ -196,7 +196,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "main" {
 resource "azurerm_postgresql_flexible_server" "main" {
   name                   = "codeforces-postgres"
   resource_group_name    = local.resource_group_name
-  location               = local.resource_group_location
+  location               = var.azure_location  # Use variable instead of resource group location
   version                = "11"
   delegated_subnet_id           = local.subnet_postgres_id
   private_dns_zone_id           = local.dns_zone_id
