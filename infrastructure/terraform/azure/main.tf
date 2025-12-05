@@ -62,7 +62,7 @@ resource "azurerm_postgresql_server" "main" {
   administrator_login_password = var.db_admin_password
 
   sku_name   = "GP_Gen5_2"
-  version    = "15"
+  version    = "11"
   storage_mb = 51200
 
   ssl_enforcement_enabled = true

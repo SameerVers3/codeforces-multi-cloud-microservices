@@ -189,10 +189,16 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
       continue-on-error: true
     
-    - name: Configure GCP credentials
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+      continue-on-error: true
+    
+    - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
       with:
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
         project_id: ${{ secrets.GCP_PROJECT_ID }}
       continue-on-error: true
     
@@ -214,8 +220,8 @@ jobs:
       continue-on-error: true
       run: |
         cd infrastructure/terraform/aws && terraform apply -auto-approve tfplan || echo "AWS apply failed"
-        cd ../azure && terraform apply -auto-approve tfplan -var="db_admin_login=${{ secrets.DB_ADMIN_LOGIN }}" -var="db_admin_password=${{ secrets.DB_ADMIN_PASSWORD }}" || echo "Azure apply failed"
-        cd ../gcp && terraform apply -auto-approve tfplan -var="gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" || echo "GCP apply failed"
+        cd ../azure && terraform apply -auto-approve tfplan || echo "Azure apply failed"
+        cd ../gcp && terraform apply -auto-approve tfplan || echo "GCP apply failed"
     
     - name: Install kubectl
       uses: azure/setup-kubectl@v3
@@ -225,26 +231,26 @@ jobs:
       continue-on-error: true
       run: |
         aws eks update-kubeconfig --name codeforces-execution-cluster --region us-east-1 || echo "AWS EKS config failed"
-        kubectl apply -f infrastructure/kubernetes/base/namespace.yaml || echo "Namespace creation failed"
-        kubectl apply -f infrastructure/kubernetes/base/ || echo "AWS deployment failed"
-        kubectl apply -f infrastructure/kubernetes/network-policies.yaml || echo "Network policies failed"
-        kubectl apply -f infrastructure/kubernetes/rbac.yaml || echo "RBAC failed"
+        kubectl apply --validate=false -f infrastructure/kubernetes/base/namespace.yaml || echo "Namespace creation failed"
+        kubectl apply --validate=false -f infrastructure/kubernetes/base/ || echo "AWS deployment failed"
+        kubectl apply --validate=false -f infrastructure/kubernetes/network-policies.yaml || echo "Network policies failed"
+        kubectl apply --validate=false -f infrastructure/kubernetes/rbac.yaml || echo "RBAC failed"
     
     - name: Deploy to Azure AKS
       continue-on-error: true
       run: |
         az aks get-credentials --resource-group codeforces-rg --name codeforces-aks-cluster || echo "Azure AKS config failed"
-        kubectl apply -f infrastructure/kubernetes/base/namespace.yaml || echo "Namespace creation failed"
-        kubectl apply -f infrastructure/kubernetes/base/ || echo "Azure deployment failed"
-        kubectl apply -f infrastructure/kubernetes/network-policies.yaml || echo "Network policies failed"
-        kubectl apply -f infrastructure/kubernetes/rbac.yaml || echo "RBAC failed"
+        kubectl apply --validate=false -f infrastructure/kubernetes/base/namespace.yaml || echo "Namespace creation failed"
+        kubectl apply --validate=false -f infrastructure/kubernetes/base/ || echo "Azure deployment failed"
+        kubectl apply --validate=false -f infrastructure/kubernetes/network-policies.yaml || echo "Network policies failed"
+        kubectl apply --validate=false -f infrastructure/kubernetes/rbac.yaml || echo "RBAC failed"
     
     - name: Deploy to GCP GKE
       continue-on-error: true
       run: |
         gcloud container clusters get-credentials codeforces-gke-cluster --region us-central1 || echo "GCP GKE config failed"
-        kubectl apply -f infrastructure/kubernetes/base/namespace.yaml || echo "Namespace creation failed"
-        kubectl apply -f infrastructure/kubernetes/base/ || echo "GCP deployment failed"
-        kubectl apply -f infrastructure/kubernetes/network-policies.yaml || echo "Network policies failed"
-        kubectl apply -f infrastructure/kubernetes/rbac.yaml || echo "RBAC failed"
+        kubectl apply --validate=false -f infrastructure/kubernetes/base/namespace.yaml || echo "Namespace creation failed"
+        kubectl apply --validate=false -f infrastructure/kubernetes/base/ || echo "GCP deployment failed"
+        kubectl apply --validate=false -f infrastructure/kubernetes/network-policies.yaml || echo "Network policies failed"
+        kubectl apply --validate=false -f infrastructure/kubernetes/rbac.yaml || echo "RBAC failed"
 

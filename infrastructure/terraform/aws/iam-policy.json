@@ -25,6 +25,7 @@
       "Action": [
         "ec2:CreateVpc",
         "ec2:DescribeVpcs",
+        "ec2:DescribeVpcAttribute",
         "ec2:ModifyVpcAttribute",
         "ec2:DeleteVpc",
         "ec2:CreateSubnet",
