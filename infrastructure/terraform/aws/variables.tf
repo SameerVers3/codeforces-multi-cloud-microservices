@@ -40,3 +40,9 @@ variable "import_existing_eks_cluster" {
   default     = false
 }
 
+variable "import_existing_vpc" {
+  description = "Use existing VPC instead of creating new one (set to true if VPC already exists)"
+  type        = bool
+  default     = false
+}
+

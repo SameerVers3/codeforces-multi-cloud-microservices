@@ -12,8 +12,20 @@ provider "aws" {
   region = var.aws_region
 }
 
+# Data source for existing VPC (if importing)
+# Try to find VPC by tags or use existing EKS cluster's VPC
+data "aws_vpc" "existing" {
+  count   = var.import_existing_vpc ? 1 : 0
+  filter {
+    name   = "tag:Name"
+    values = ["codeforces-aws-vpc"]
+  }
+}
+
 # VPC for AWS resources
+# If VPC already exists, set import_existing_vpc = true
 resource "aws_vpc" "main" {
+  count                = var.import_existing_vpc ? 0 : 1
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
@@ -21,6 +33,11 @@ resource "aws_vpc" "main" {
   tags = {
     Name = "codeforces-aws-vpc"
   }
+}
+
+# Use existing VPC or created VPC
+locals {
+  vpc_id = var.import_existing_vpc ? data.aws_vpc.existing[0].id : aws_vpc.main[0].id
 }
 
 # Data source for existing EKS cluster (if importing)
@@ -38,7 +55,7 @@ resource "aws_eks_cluster" "main" {
   version  = "1.28"
 
   vpc_config {
-    subnet_ids = aws_subnet.main[*].id
+    subnet_ids = local.subnet_ids
   }
 
   # Dependencies are handled automatically through role_arn reference
@@ -84,9 +101,10 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 }
 
 # Subnets
+# If VPC already exists, try to use existing subnets or create new ones
 resource "aws_subnet" "main" {
-  count             = 2
-  vpc_id            = aws_vpc.main.id
+  count             = var.import_existing_vpc ? 0 : 2
+  vpc_id            = local.vpc_id
   cidr_block        = "10.0.${count.index + 1}.0/24"
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
@@ -99,22 +117,38 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
+# Data source for existing Internet Gateway (if importing)
+data "aws_internet_gateway" "existing" {
+  count = var.import_existing_vpc ? 1 : 0
+  filter {
+    name   = "attachment.vpc-id"
+    values = [local.vpc_id]
+  }
+}
+
 # Internet Gateway
+# If VPC already exists, use existing IGW
 resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
+  count  = var.import_existing_vpc ? 0 : 1
+  vpc_id = aws_vpc.main[0].id
 
   tags = {
     Name = "codeforces-igw"
   }
 }
 
+# Use existing IGW or created IGW
+locals {
+  igw_id = var.import_existing_vpc ? data.aws_internet_gateway.existing[0].id : aws_internet_gateway.main[0].id
+}
+
 # Route Table
 resource "aws_route_table" "main" {
-  vpc_id = aws_vpc.main.id
+  vpc_id = local.vpc_id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main.id
+    gateway_id = local.igw_id
   }
 
   tags = {
@@ -123,8 +157,8 @@ resource "aws_route_table" "main" {
 }
 
 resource "aws_route_table_association" "main" {
-  count          = length(aws_subnet.main)
-  subnet_id      = aws_subnet.main[count.index].id
+  count          = length(local.subnet_ids)
+  subnet_id      = local.subnet_ids[count.index]
   route_table_id = aws_route_table.main.id
 }
 
@@ -145,7 +179,7 @@ resource "aws_lb" "main" {
 resource "aws_security_group" "alb" {
   count       = var.enable_load_balancer ? 1 : 0
   name_prefix = "codeforces-alb-"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = local.vpc_id
 
   ingress {
     from_port   = 80

@@ -1,7 +1,7 @@
 variable "azure_location" {
   description = "Azure location"
   type        = string
-  default     = "eastus"
+  default     = "westus2"  # Changed from eastus due to quota restrictions
 }
 
 variable "resource_group_name" {
