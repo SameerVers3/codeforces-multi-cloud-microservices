@@ -40,3 +40,15 @@ variable "import_existing_resource_group" {
   default     = false
 }
 
+variable "import_existing_vnet" {
+  description = "Use existing virtual network instead of creating new one (set to true if VNet already exists)"
+  type        = bool
+  default     = false
+}
+
+variable "import_existing_public_ip" {
+  description = "Use existing public IP instead of creating new one (set to true if public IP already exists)"
+  type        = bool
+  default     = false
+}
+

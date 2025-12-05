@@ -39,19 +39,53 @@ locals {
   resource_group_location = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].location : azurerm_resource_group.main[0].location
 }
 
+# Data source for existing virtual network (if importing)
+data "azurerm_virtual_network" "existing" {
+  count               = var.import_existing_vnet ? 1 : 0
+  name                = "codeforces-vnet"
+  resource_group_name = local.resource_group_name
+}
+
 # Virtual Network
+# If VNet already exists, set import_existing_vnet = true
 resource "azurerm_virtual_network" "main" {
+  count               = var.import_existing_vnet ? 0 : 1
   name                = "codeforces-vnet"
   address_space       = ["10.1.0.0/16"]
   location            = local.resource_group_location
   resource_group_name = local.resource_group_name
 }
 
+# Data source for existing public IP (if importing)
+data "azurerm_public_ip" "existing" {
+  count               = var.import_existing_public_ip ? 1 : 0
+  name                = "codeforces-lb-ip"
+  resource_group_name = local.resource_group_name
+}
+
+# Load Balancer Public IP
+# If public IP already exists, set import_existing_public_ip = true
+resource "azurerm_public_ip" "main" {
+  count               = var.import_existing_public_ip ? 0 : 1
+  name                = "codeforces-lb-ip"
+  location            = local.resource_group_location
+  resource_group_name = local.resource_group_name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+# Use existing VNet and Public IP if importing, otherwise use created ones
+locals {
+  vnet_id = var.import_existing_vnet ? data.azurerm_virtual_network.existing[0].id : azurerm_virtual_network.main[0].id
+  vnet_name = var.import_existing_vnet ? data.azurerm_virtual_network.existing[0].name : azurerm_virtual_network.main[0].name
+  public_ip_id = var.import_existing_public_ip ? data.azurerm_public_ip.existing[0].id : azurerm_public_ip.main[0].id
+}
+
 # Subnet
 resource "azurerm_subnet" "main" {
   name                 = "codeforces-subnet"
   resource_group_name  = local.resource_group_name
-  virtual_network_name = azurerm_virtual_network.main.name
+  virtual_network_name = local.vnet_name
   address_prefixes     = ["10.1.1.0/24"]
 }
 
@@ -78,7 +112,7 @@ resource "azurerm_kubernetes_cluster" "main" {
 resource "azurerm_subnet" "postgres" {
   name                 = "codeforces-postgres-subnet"
   resource_group_name  = local.resource_group_name
-  virtual_network_name = azurerm_virtual_network.main.name
+  virtual_network_name = local.vnet_name
   address_prefixes     = ["10.1.2.0/24"]
   
   delegation {
@@ -101,7 +135,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "main" {
   name                  = "codeforces-vnet-link"
   resource_group_name   = local.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.main.name
-  virtual_network_id    = azurerm_virtual_network.main.id
+  virtual_network_id    = local.vnet_id
 }
 
 resource "azurerm_postgresql_flexible_server" "main" {
@@ -132,13 +166,6 @@ resource "azurerm_postgresql_flexible_server_database" "main" {
 }
 
 # Load Balancer
-resource "azurerm_public_ip" "main" {
-  name                = "codeforces-lb-ip"
-  location            = local.resource_group_location
-  resource_group_name = local.resource_group_name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
 
 resource "azurerm_lb" "main" {
   name                = "codeforces-lb"
@@ -148,7 +175,7 @@ resource "azurerm_lb" "main" {
 
   frontend_ip_configuration {
     name                 = "PublicIPAddress"
-    public_ip_address_id = azurerm_public_ip.main.id
+    public_ip_address_id = local.public_ip_id
   }
 }
 

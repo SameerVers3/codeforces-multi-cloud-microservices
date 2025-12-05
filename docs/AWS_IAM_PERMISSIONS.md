@@ -223,11 +223,13 @@ Create a custom IAM policy with minimal required permissions:
         "iam:ListRolePolicies",
         "iam:TagRole",
         "iam:UntagRole",
-        "iam:PassRole"
+        "iam:PassRole",
+        "iam:CreateServiceLinkedRole"
       ],
       "Resource": [
         "arn:aws:iam::*:role/codeforces-eks-cluster-role",
-        "arn:aws:iam::*:role/codeforces-eks-node-role"
+        "arn:aws:iam::*:role/codeforces-eks-node-role",
+        "arn:aws:iam::*:role/aws-service-role/eks.amazonaws.com/AWSServiceRoleForAmazonEKS"
       ]
     },
     {
