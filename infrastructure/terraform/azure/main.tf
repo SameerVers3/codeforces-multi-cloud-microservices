@@ -144,16 +144,16 @@ resource "azurerm_subnet" "postgres" {
 }
 
 # Data source for existing private DNS zone (if importing)
-# Note: DNS zone name must be just the zone suffix, not server name + suffix
+# Note: DNS zone name must end with .postgres.database.azure.com (with a prefix)
 data "azurerm_private_dns_zone" "existing" {
   count               = var.import_existing_dns_zone ? 1 : 0
-  name                = "postgres.database.azure.com"
+  name                = "codeforces.postgres.database.azure.com"
   resource_group_name = local.resource_group_name
 }
 
 resource "azurerm_private_dns_zone" "main" {
   count               = var.import_existing_dns_zone ? 0 : 1
-  name                = "postgres.database.azure.com"
+  name                = "codeforces.postgres.database.azure.com"
   resource_group_name = local.resource_group_name
 }
 
