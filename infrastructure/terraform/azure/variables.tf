@@ -88,3 +88,9 @@ variable "import_existing_dns_vnet_link" {
   default     = false
 }
 
+variable "import_existing_postgres" {
+  description = "Use existing PostgreSQL server instead of creating new one (set to true if PostgreSQL server already exists)"
+  type        = bool
+  default     = false
+}
+

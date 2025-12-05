@@ -193,7 +193,15 @@ resource "azurerm_private_dns_zone_virtual_network_link" "main" {
   virtual_network_id    = local.vnet_id
 }
 
+# Data source for existing PostgreSQL server (if importing)
+data "azurerm_postgresql_flexible_server" "existing" {
+  count               = var.import_existing_postgres ? 1 : 0
+  name                = "codeforces-postgres"
+  resource_group_name = local.resource_group_name
+}
+
 resource "azurerm_postgresql_flexible_server" "main" {
+  count                = var.import_existing_postgres ? 0 : 1
   name                   = "codeforces-postgres"
   resource_group_name    = local.resource_group_name
   location               = var.azure_location  # Use variable instead of resource group location
@@ -216,7 +224,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
 
 resource "azurerm_postgresql_flexible_server_database" "main" {
   name      = "codeforces_db"
-  server_id = azurerm_postgresql_flexible_server.main.id
+  server_id = var.import_existing_postgres ? data.azurerm_postgresql_flexible_server.existing[0].id : azurerm_postgresql_flexible_server.main[0].id
   charset   = "UTF8"
   collation = "en_US.utf8"
 }

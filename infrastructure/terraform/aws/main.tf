@@ -148,7 +148,9 @@ resource "aws_internet_gateway" "main" {
 # IGW ID is now in main locals block above
 
 # Route Table
+# Only create if we're creating new VPC (existing VPC already has route tables)
 resource "aws_route_table" "main" {
+  count  = var.import_existing_vpc ? 0 : 1
   vpc_id = local.vpc_id
 
   route {
@@ -161,10 +163,12 @@ resource "aws_route_table" "main" {
   }
 }
 
+# Route table associations are automatically created when using existing VPC
+# Only create associations if we're creating new VPC
 resource "aws_route_table_association" "main" {
-  count          = length(local.subnet_ids)
+  count          = var.import_existing_vpc ? 0 : length(local.subnet_ids)
   subnet_id      = local.subnet_ids[count.index]
-  route_table_id = aws_route_table.main.id
+  route_table_id = aws_route_table.main[0].id
 }
 
 # Application Load Balancer
