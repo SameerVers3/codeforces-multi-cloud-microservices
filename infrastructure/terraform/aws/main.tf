@@ -35,10 +35,7 @@ resource "aws_vpc" "main" {
   }
 }
 
-# Use existing VPC or created VPC
-locals {
-  vpc_id = var.import_existing_vpc ? data.aws_vpc.existing[0].id : aws_vpc.main[0].id
-}
+# Use existing VPC or created VPC (consolidated into main locals block)
 
 # Data source for existing EKS cluster (if importing)
 data "aws_eks_cluster" "existing" {
@@ -89,9 +86,25 @@ resource "aws_iam_role" "eks_cluster" {
   }
 }
 
+# Data source for existing subnets (if importing)
+data "aws_subnets" "existing" {
+  count = var.import_existing_vpc ? 1 : 0
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.existing[0].id]
+  }
+  filter {
+    name   = "tag:Name"
+    values = ["codeforces-subnet-*"]
+  }
+}
+
 # Use existing role or created role
 locals {
   eks_cluster_role_arn = var.import_existing_iam_role ? data.aws_iam_role.existing_eks_cluster[0].arn : aws_iam_role.eks_cluster[0].arn
+  vpc_id               = var.import_existing_vpc ? data.aws_vpc.existing[0].id : aws_vpc.main[0].id
+  subnet_ids           = var.import_existing_vpc ? data.aws_subnets.existing[0].ids : aws_subnet.main[*].id
+  igw_id               = var.import_existing_vpc ? data.aws_internet_gateway.existing[0].id : aws_internet_gateway.main[0].id
 }
 
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
@@ -137,10 +150,7 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-# Use existing IGW or created IGW
-locals {
-  igw_id = var.import_existing_vpc ? data.aws_internet_gateway.existing[0].id : aws_internet_gateway.main[0].id
-}
+# IGW ID is now in main locals block above
 
 # Route Table
 resource "aws_route_table" "main" {
