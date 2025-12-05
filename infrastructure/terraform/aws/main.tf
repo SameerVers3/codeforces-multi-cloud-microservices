@@ -31,11 +31,6 @@ resource "aws_vpc" "main" {
   }
 }
 
-# Use existing VPC or created VPC
-locals {
-  vpc_id = var.import_existing_vpc ? data.aws_subnet.eks_subnet[0].vpc_id : aws_vpc.main[0].id
-}
-
 # Data source for existing EKS cluster (if importing)
 data "aws_eks_cluster" "existing" {
   count = var.import_existing_eks_cluster ? 1 : 0
@@ -102,7 +97,7 @@ data "aws_subnets" "existing" {
 # Use existing role or created role
 locals {
   eks_cluster_role_arn = var.import_existing_iam_role ? data.aws_iam_role.existing_eks_cluster[0].arn : aws_iam_role.eks_cluster[0].arn
-  vpc_id               = var.import_existing_vpc ? data.aws_vpc.existing[0].id : aws_vpc.main[0].id
+  vpc_id               = var.import_existing_vpc ? data.aws_subnet.eks_subnet[0].vpc_id : aws_vpc.main[0].id
   subnet_ids           = var.import_existing_vpc ? data.aws_subnets.existing[0].ids : aws_subnet.main[*].id
   igw_id               = var.import_existing_vpc ? data.aws_internet_gateway.existing[0].id : aws_internet_gateway.main[0].id
 }
