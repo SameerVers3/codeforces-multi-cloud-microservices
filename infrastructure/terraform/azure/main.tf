@@ -197,10 +197,11 @@ resource "azurerm_postgresql_flexible_server" "main" {
   resource_group_name    = local.resource_group_name
   location               = local.resource_group_location
   version                = "11"
-  delegated_subnet_id    = local.subnet_postgres_id
-  private_dns_zone_id    = local.dns_zone_id
-  administrator_login    = var.db_admin_login
-  administrator_password = var.db_admin_password
+  delegated_subnet_id           = local.subnet_postgres_id
+  private_dns_zone_id           = local.dns_zone_id
+  public_network_access_enabled = false
+  administrator_login            = var.db_admin_login
+  administrator_password         = var.db_admin_password
 
   sku_name = "GP_Standard_D2s_v3"
 
