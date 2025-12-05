@@ -34,3 +34,9 @@ variable "import_existing_iam_role" {
   default     = false
 }
 
+variable "import_existing_eks_cluster" {
+  description = "Use existing EKS cluster instead of creating new one (set to true if EKS cluster already exists)"
+  type        = bool
+  default     = false
+}
+

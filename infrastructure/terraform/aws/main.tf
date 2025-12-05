@@ -23,8 +23,16 @@ resource "aws_vpc" "main" {
   }
 }
 
+# Data source for existing EKS cluster (if importing)
+data "aws_eks_cluster" "existing" {
+  count = var.import_existing_eks_cluster ? 1 : 0
+  name  = "codeforces-aws-cluster"
+}
+
 # EKS Cluster for all AWS services (Execution, Submission, Scoring, Leaderboard, Frontend)
+# If cluster already exists, set import_existing_eks_cluster = true
 resource "aws_eks_cluster" "main" {
+  count    = var.import_existing_eks_cluster ? 0 : 1
   name     = "codeforces-aws-cluster"
   role_arn = local.eks_cluster_role_arn
   version  = "1.28"
@@ -33,9 +41,7 @@ resource "aws_eks_cluster" "main" {
     subnet_ids = aws_subnet.main[*].id
   }
 
-  depends_on = [
-    aws_iam_role_policy_attachment.eks_cluster_policy,
-  ]
+  depends_on = var.import_existing_iam_role ? [] : [aws_iam_role_policy_attachment.eks_cluster_policy[0]]
 }
 
 # Data source for existing IAM role (if importing)
