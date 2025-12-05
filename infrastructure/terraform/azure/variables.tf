@@ -82,3 +82,9 @@ variable "import_existing_lb" {
   default     = false
 }
 
+variable "import_existing_dns_vnet_link" {
+  description = "Use existing DNS zone VNet link instead of creating new one (set to true if link already exists)"
+  type        = bool
+  default     = false
+}
+

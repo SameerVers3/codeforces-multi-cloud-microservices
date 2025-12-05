@@ -176,7 +176,16 @@ locals {
   dns_zone_name = var.import_existing_dns_zone ? data.azurerm_private_dns_zone.existing[0].name : azurerm_private_dns_zone.main[0].name
 }
 
+# Data source for existing DNS zone VNet link (if importing)
+data "azurerm_private_dns_zone_virtual_network_link" "existing" {
+  count                = var.import_existing_dns_vnet_link ? 1 : 0
+  name                 = "codeforces-vnet-link"
+  resource_group_name  = local.resource_group_name
+  private_dns_zone_name = local.dns_zone_name
+}
+
 resource "azurerm_private_dns_zone_virtual_network_link" "main" {
+  count                = var.import_existing_dns_vnet_link ? 0 : 1
   name                  = "codeforces-vnet-link"
   resource_group_name   = local.resource_group_name
   private_dns_zone_name = local.dns_zone_name
@@ -200,7 +209,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
 
-  depends_on = [azurerm_private_dns_zone_virtual_network_link.main]
+  depends_on = var.import_existing_dns_vnet_link ? [data.azurerm_private_dns_zone_virtual_network_link.existing[0]] : [azurerm_private_dns_zone_virtual_network_link.main[0]]
 }
 
 resource "azurerm_postgresql_flexible_server_database" "main" {
