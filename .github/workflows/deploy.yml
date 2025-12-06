@@ -28,16 +28,11 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     
-    - name: Convert actor to lowercase for Docker registry
-      id: repo
-      run: |
-        echo "owner=$(echo '${{ github.actor }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-    
     - name: Log in to Container Registry
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
+        username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Build and push Docker image
@@ -46,10 +41,9 @@ jobs:
       with:
         context: ./services/${{ matrix.service }}
         push: ${{ github.event_name != 'pull_request' }}
-        # Use user packages (ghcr.io/USERNAME/package) instead of org packages to avoid permission issues
         tags: |
-          ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-${{ matrix.service }}:${{ github.sha }}
-          ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-${{ matrix.service }}:latest
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/codeforces-${{ matrix.service }}:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/codeforces-${{ matrix.service }}:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
         platforms: linux/amd64
@@ -60,7 +54,7 @@ jobs:
       id: trivy-scan
       continue-on-error: true
       with:
-        image-ref: ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-${{ matrix.service }}:${{ github.sha }}
+        image-ref: ${{ env.REGISTRY }}/${{ github.repository_owner }}/codeforces-${{ matrix.service }}:${{ github.sha }}
         format: 'sarif'
         output: 'trivy-results-${{ matrix.service }}.sarif'
         exit-code: '0'
@@ -90,16 +84,11 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     
-    - name: Convert actor to lowercase for Docker registry
-      id: repo
-      run: |
-        echo "owner=$(echo '${{ github.actor }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-    
     - name: Log in to Container Registry
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
+        username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Build and push frontend Docker image
@@ -108,8 +97,8 @@ jobs:
         context: ./frontend/nextjs-app
         push: ${{ github.event_name != 'pull_request' }}
         tags: |
-          ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-frontend:${{ github.sha }}
-          ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-frontend:latest
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/codeforces-frontend:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/codeforces-frontend:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
         platforms: linux/amd64
@@ -270,9 +259,34 @@ jobs:
     
     - name: Deploy to Azure AKS
       continue-on-error: true
+      env:
+        DB_PASSWORD: ${{ secrets.DB_ADMIN_PASSWORD }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET_KEY }}
       run: |
         az aks get-credentials --resource-group codeforces-rg --name codeforces-aks-cluster || echo "Azure AKS config failed"
         kubectl apply --validate=false -f infrastructure/kubernetes/base/namespace.yaml || echo "Namespace creation failed"
+        
+        # Create secrets
+        kubectl create secret generic db-secret \
+          --from-literal=url="postgresql://${{ secrets.DB_ADMIN_LOGIN }}:${DB_PASSWORD}@codeforces-postgres.postgres.database.azure.com:5432/codeforces_db?sslmode=require" \
+          --namespace=codeforces \
+          --dry-run=client -o yaml | kubectl apply -f - || echo "DB secret creation failed"
+        
+        kubectl create secret generic redis-secret \
+          --from-literal=url="redis://redis:6379/0" \
+          --namespace=codeforces \
+          --dry-run=client -o yaml | kubectl apply -f - || echo "Redis secret creation failed"
+        
+        kubectl create secret generic jwt-secret \
+          --from-literal=secret-key="${JWT_SECRET:-your-secret-jwt-key-change-in-production}" \
+          --namespace=codeforces \
+          --dry-run=client -o yaml | kubectl apply -f - || echo "JWT secret creation failed"
+        
+        kubectl create secret generic rabbitmq-secret \
+          --from-literal=url="amqp://guest:guest@rabbitmq:5672/" \
+          --namespace=codeforces \
+          --dry-run=client -o yaml | kubectl apply -f - || echo "RabbitMQ secret creation failed"
+        
         find infrastructure/kubernetes/base/ -name "*.yaml" ! -name "kustomization.yaml" -exec kubectl apply --validate=false -f {} \; || echo "Azure deployment failed"
         kubectl apply --validate=false -f infrastructure/kubernetes/network-policies.yaml || echo "Network policies failed"
         kubectl apply --validate=false -f infrastructure/kubernetes/rbac.yaml || echo "RBAC failed"
