@@ -203,12 +203,17 @@ jobs:
       run: |
         cd infrastructure/terraform/aws && terraform plan -out=tfplan -var="import_existing_iam_role=true" -var="import_existing_eks_cluster=true" -var="import_existing_vpc=true" || echo "AWS plan failed"
         cd ../azure && \
-        # Try to detect if PostgreSQL exists, otherwise create it
-        if az postgres flexible-server show --resource-group codeforces-rg --name codeforces-postgres &>/dev/null; then
-          POSTGRES_EXISTS=true
-        else
+        # Try to detect if PostgreSQL exists (in any location), otherwise create it
+        echo "Checking if PostgreSQL server exists..."
+        POSTGRES_EXISTS=true  # Default to true (use existing) since server exists
+        # Check if server exists - if command fails, server doesn't exist
+        if ! az postgres flexible-server show --resource-group codeforces-rg --name codeforces-postgres --output json >/dev/null 2>&1; then
           POSTGRES_EXISTS=false
-        fi && \
+          echo "✗ PostgreSQL server does not exist, will create new in westus2"
+        else
+          echo "✓ PostgreSQL server exists, will use existing"
+        fi
+        echo "import_existing_postgres=$POSTGRES_EXISTS" && \
         terraform plan -out=tfplan \
           -var="import_existing_resource_group=true" \
           -var="import_existing_vnet=true" \

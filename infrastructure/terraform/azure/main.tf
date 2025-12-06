@@ -207,11 +207,13 @@ data "azurerm_postgresql_flexible_server" "existing" {
 
 # PostgreSQL server: create if doesn't exist, otherwise use existing
 # Set import_existing_postgres=true if server already exists, false to create new
+# Note: If server exists in a different location, we'll use it as-is (location mismatch is handled)
 resource "azurerm_postgresql_flexible_server" "main" {
   count                = var.import_existing_postgres ? 0 : 1
   name                   = "codeforces-postgres"
   resource_group_name    = local.resource_group_name
-  location               = var.azure_location  # Use variable instead of resource group location
+  # Use resource group location if importing existing, otherwise use variable location
+  location               = var.import_existing_postgres ? local.resource_group_location : var.azure_location
   version                = "11"
   delegated_subnet_id           = local.subnet_postgres_id
   private_dns_zone_id           = local.dns_zone_id
@@ -227,6 +229,10 @@ resource "azurerm_postgresql_flexible_server" "main" {
   geo_redundant_backup_enabled = false
 
   # Dependencies are handled automatically through private_dns_zone_id reference
+  
+  lifecycle {
+    ignore_changes = [location]  # Ignore location changes if server exists in different location
+  }
 }
 
 # PostgreSQL server ID and FQDN are now in main locals block above
