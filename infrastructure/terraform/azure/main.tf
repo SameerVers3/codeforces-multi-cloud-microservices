@@ -197,10 +197,9 @@ resource "azurerm_private_dns_zone_virtual_network_link" "main" {
   virtual_network_id    = local.vnet_id
 }
 
-# Data source for existing PostgreSQL server
-# Always check if server exists - Terraform will handle errors gracefully
+# Data source for existing PostgreSQL server (only when lookup is allowed)
 data "azurerm_postgresql_flexible_server" "existing" {
-  count               = var.import_existing_postgres ? 1 : 0
+  count               = var.import_existing_postgres && var.allow_postgres_lookup ? 1 : 0
   name                = "codeforces-postgres"
   resource_group_name = local.resource_group_name
 }
