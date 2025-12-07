@@ -163,7 +163,7 @@ locals {
   resource_group_name = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].name : azurerm_resource_group.main[0].name
   resource_group_location = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].location : azurerm_resource_group.main[0].location
   
-  # PostgreSQL Server (existing or created)
+  # PostgreSQL Server - use data source when importing, resource when creating
   postgres_server_id = var.import_existing_postgres ? data.azurerm_postgresql_flexible_server.existing[0].id : azurerm_postgresql_flexible_server.main[0].id
   postgres_server_fqdn = var.import_existing_postgres ? data.azurerm_postgresql_flexible_server.existing[0].fqdn : azurerm_postgresql_flexible_server.main[0].fqdn
   
@@ -197,21 +197,19 @@ resource "azurerm_private_dns_zone_virtual_network_link" "main" {
   virtual_network_id    = local.vnet_id
 }
 
-# Data source to check if PostgreSQL server exists
-# This tries to find the server and will fail gracefully if it doesn't exist
+# Data source for existing PostgreSQL server
+# The server exists in eastus, we'll always import it
 data "azurerm_postgresql_flexible_server" "existing" {
-  count               = 0  # Never use this - we'll use lifecycle to prevent recreation
+  count               = var.import_existing_postgres ? 1 : 0
   name                = "codeforces-postgres"
   resource_group_name = local.resource_group_name
 }
 
-# PostgreSQL server: create if doesn't exist, prevent recreation if it does
-# Using lifecycle prevent_destroy to avoid conflicts with existing servers
+# PostgreSQL server: create only if not importing existing
 resource "azurerm_postgresql_flexible_server" "main" {
   count                = var.import_existing_postgres ? 0 : 1
   name                   = "codeforces-postgres"
   resource_group_name    = local.resource_group_name
-  # Use westus2 for new servers (existing server in eastus will be preserved)
   location               = var.azure_location
   version                = "11"
   delegated_subnet_id           = local.subnet_postgres_id
