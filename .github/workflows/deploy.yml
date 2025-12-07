@@ -247,7 +247,7 @@ jobs:
           -var="import_existing_dns_zone=true" \
           -var="import_existing_dns_vnet_link=true" \
           -var="import_existing_lb=true" \
-          -var="import_existing_postgres=$POSTGRES_EXISTS" \\
+          -var="import_existing_postgres=$POSTGRES_EXISTS" \
           -var="db_admin_login=${{ secrets.DB_ADMIN_LOGIN }}" \
           -var="db_admin_password=${{ secrets.DB_ADMIN_PASSWORD }}" && \
         echo "✓ Azure plan created successfully" || \
