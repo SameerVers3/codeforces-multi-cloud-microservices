@@ -10,6 +10,18 @@ variable "allow_postgres_lookup" {
   default     = true
 }
 
+variable "postgres_server_id" {
+  description = "Existing PostgreSQL server resource ID (required when import_existing_postgres=true and allow_postgres_lookup=false)"
+  type        = string
+  default     = ""
+}
+
+variable "postgres_server_fqdn" {
+  description = "Existing PostgreSQL server FQDN (required when import_existing_postgres=true and allow_postgres_lookup=false)"
+  type        = string
+  default     = ""
+}
+
 variable "resource_group_name" {
   description = "Resource group name"
   type        = string

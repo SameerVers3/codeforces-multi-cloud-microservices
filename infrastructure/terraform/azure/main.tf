@@ -163,9 +163,9 @@ locals {
   resource_group_name = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].name : azurerm_resource_group.main[0].name
   resource_group_location = var.import_existing_resource_group ? data.azurerm_resource_group.existing[0].location : azurerm_resource_group.main[0].location
   
-  # PostgreSQL Server - use data source when importing, resource when creating
-  postgres_server_id = var.import_existing_postgres ? data.azurerm_postgresql_flexible_server.existing[0].id : azurerm_postgresql_flexible_server.main[0].id
-  postgres_server_fqdn = var.import_existing_postgres ? data.azurerm_postgresql_flexible_server.existing[0].fqdn : azurerm_postgresql_flexible_server.main[0].fqdn
+  # PostgreSQL Server - prefer data source when available, fallback to created resource, else use provided variables
+  postgres_server_id = length(data.azurerm_postgresql_flexible_server.existing) > 0 ? data.azurerm_postgresql_flexible_server.existing[0].id : (length(azurerm_postgresql_flexible_server.main) > 0 ? azurerm_postgresql_flexible_server.main[0].id : var.postgres_server_id)
+  postgres_server_fqdn = length(data.azurerm_postgresql_flexible_server.existing) > 0 ? data.azurerm_postgresql_flexible_server.existing[0].fqdn : (length(azurerm_postgresql_flexible_server.main) > 0 ? azurerm_postgresql_flexible_server.main[0].fqdn : var.postgres_server_fqdn)
   
   # VNet and Public IP
   vnet_id = var.import_existing_vnet ? data.azurerm_virtual_network.existing[0].id : azurerm_virtual_network.main[0].id
