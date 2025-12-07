@@ -231,12 +231,6 @@ resource "azurerm_postgresql_flexible_server" "main" {
     # Ignore location changes to prevent recreation if server exists in different location
     ignore_changes = [location]
   }
-
-  # Dependencies are handled automatically through private_dns_zone_id reference
-  
-  lifecycle {
-    ignore_changes = [location]  # Ignore location changes if server exists in different location
-  }
 }
 
 # PostgreSQL server ID and FQDN are now in main locals block above
