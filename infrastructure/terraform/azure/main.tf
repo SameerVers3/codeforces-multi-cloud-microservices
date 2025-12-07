@@ -198,7 +198,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "main" {
 }
 
 # Data source for existing PostgreSQL server
-# The server exists in eastus, we'll always import it
+# Always check if server exists - Terraform will handle errors gracefully
 data "azurerm_postgresql_flexible_server" "existing" {
   count               = var.import_existing_postgres ? 1 : 0
   name                = "codeforces-postgres"
