@@ -217,13 +217,28 @@ jobs:
         cd ../azure && \
         # Check if AKS cluster exists
         echo "Checking if AKS cluster exists..."
-        # Detect PostgreSQL server existence using resource list
+        # Detect PostgreSQL server existence with multiple methods
         echo "Checking for existing PostgreSQL server..."
-        if az resource list --resource-group codeforces-rg --resource-type Microsoft.DBforPostgreSQL/flexibleServers --query "[?name=='codeforces-postgres'].id" -o tsv 2>/dev/null | grep -q "codeforces-postgres"; then
-          echo "✓ PostgreSQL server 'codeforces-postgres' exists, will import"
+        echo "Method 1: Using az resource list..."
+        POSTGRES_RESOURCES=$(az resource list --resource-group codeforces-rg --resource-type Microsoft.DBforPostgreSQL/flexibleServers -o json 2>&1)
+        echo "Found resources: $POSTGRES_RESOURCES"
+        
+        echo "Method 2: Using az postgres flexible-server list..."
+        POSTGRES_LIST=$(az postgres flexible-server list --resource-group codeforces-rg -o json 2>&1)
+        echo "Postgres list: $POSTGRES_LIST"
+        
+        echo "Method 3: Direct check with az postgres flexible-server show..."
+        if az postgres flexible-server show --resource-group codeforces-rg --name codeforces-postgres --output none 2>/dev/null; then
+          echo "✓ PostgreSQL server 'codeforces-postgres' exists (found via show), will import"
+          POSTGRES_EXISTS=true
+        elif echo "$POSTGRES_LIST" | grep -q "codeforces-postgres"; then
+          echo "✓ PostgreSQL server 'codeforces-postgres' exists (found via list), will import"
+          POSTGRES_EXISTS=true
+        elif echo "$POSTGRES_RESOURCES" | grep -q "codeforces-postgres"; then
+          echo "✓ PostgreSQL server 'codeforces-postgres' exists (found via resource list), will import"
           POSTGRES_EXISTS=true
         else
-          echo "✗ PostgreSQL server does not exist, will create new"
+          echo "✗ PostgreSQL server does not exist in any check, will create new"
           POSTGRES_EXISTS=false
         fi
         
