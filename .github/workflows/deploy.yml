@@ -251,7 +251,11 @@ jobs:
           echo "⚠️ Ensure the service principal has Reader access on the PostgreSQL server or resource group"
           POSTGRES_EXISTS=true
           POSTGRES_LOCATION="eastus"
+          POSTGRES_LOOKUP=false
         fi
+
+        # Default lookup flag when not set above
+        if [ -z "${POSTGRES_LOOKUP+x}" ]; then POSTGRES_LOOKUP=true; fi
         
         if az aks show --resource-group codeforces-rg --name codeforces-aks-cluster --output json >/dev/null 2>&1; then
           echo "✓ AKS cluster exists, will use existing"
@@ -263,6 +267,7 @@ jobs:
         
         echo "Setting import_existing_aks_cluster=$AKS_EXISTS"
         echo "Setting import_existing_postgres=$POSTGRES_EXISTS"
+        echo "Setting allow_postgres_lookup=$POSTGRES_LOOKUP"
         echo "Setting azure_location=$POSTGRES_LOCATION (using PostgreSQL server location)"
         terraform plan -out=tfplan \
           -var="import_existing_resource_group=true" \
@@ -275,6 +280,7 @@ jobs:
           -var="import_existing_dns_vnet_link=true" \
           -var="import_existing_lb=true" \
           -var="import_existing_postgres=$POSTGRES_EXISTS" \
+          -var="allow_postgres_lookup=$POSTGRES_LOOKUP" \
           -var="azure_location=$POSTGRES_LOCATION" \
           -var="db_admin_login=${{ secrets.DB_ADMIN_LOGIN }}" \
           -var="db_admin_password=${{ secrets.DB_ADMIN_PASSWORD }}" && \

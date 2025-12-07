@@ -236,6 +236,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
 # PostgreSQL server ID and FQDN are now in main locals block above
 
 resource "azurerm_postgresql_flexible_server_database" "main" {
+  count     = var.import_existing_postgres ? 0 : 1
   name      = "codeforces_db"
   server_id = local.postgres_server_id
   charset   = "UTF8"

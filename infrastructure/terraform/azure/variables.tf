@@ -4,6 +4,12 @@ variable "azure_location" {
   default     = "westus2"  # Changed from eastus due to quota restrictions
 }
 
+variable "allow_postgres_lookup" {
+  description = "If true, attempt to read existing PostgreSQL server via data source; set false when service principal lacks permission to avoid plan failures"
+  type        = bool
+  default     = true
+}
+
 variable "resource_group_name" {
   description = "Resource group name"
   type        = string
