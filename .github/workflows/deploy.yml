@@ -247,9 +247,10 @@ jobs:
           POSTGRES_LOCATION=$(echo "$POSTGRES_RESOURCES" | grep -A 20 "codeforces-postgres" | grep "location" | head -1 | cut -d'"' -f4 || echo "eastus")
           echo "PostgreSQL server location: $POSTGRES_LOCATION"
         else
-          echo "✗ PostgreSQL server does not exist in any check, will create new"
-          POSTGRES_EXISTS=false
-          POSTGRES_LOCATION="westus2"
+          echo "✗ PostgreSQL server not visible via CLI; defaulting to import existing to avoid duplicate creation"
+          echo "⚠️ Ensure the service principal has Reader access on the PostgreSQL server or resource group"
+          POSTGRES_EXISTS=true
+          POSTGRES_LOCATION="eastus"
         fi
         
         if az aks show --resource-group codeforces-rg --name codeforces-aks-cluster --output json >/dev/null 2>&1; then
