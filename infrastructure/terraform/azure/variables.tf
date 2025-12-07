@@ -89,8 +89,8 @@ variable "import_existing_dns_vnet_link" {
 }
 
 variable "import_existing_postgres" {
-  description = "Use existing PostgreSQL server instead of creating new one. Set to true if server already exists, false to create new. Terraform will create if doesn't exist, use existing if it does."
+  description = "Use existing PostgreSQL server instead of creating new one. Set to true if server already exists, false to create new. Defaults to true since server exists in eastus."
   type        = bool
-  default     = false
+  default     = true  # Changed to true since the server already exists in eastus
 }
 

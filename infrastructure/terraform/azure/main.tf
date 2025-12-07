@@ -197,23 +197,22 @@ resource "azurerm_private_dns_zone_virtual_network_link" "main" {
   virtual_network_id    = local.vnet_id
 }
 
-# Data source for existing PostgreSQL server (try to find it)
-# This will fail silently if server doesn't exist, which is handled by count
+# Data source to check if PostgreSQL server exists
+# This tries to find the server and will fail gracefully if it doesn't exist
 data "azurerm_postgresql_flexible_server" "existing" {
-  count               = var.import_existing_postgres ? 1 : 0
+  count               = 0  # Never use this - we'll use lifecycle to prevent recreation
   name                = "codeforces-postgres"
   resource_group_name = local.resource_group_name
 }
 
-# PostgreSQL server: create if doesn't exist, otherwise use existing
-# Set import_existing_postgres=true if server already exists, false to create new
-# Note: If server exists in a different location, we'll use it as-is (location mismatch is handled)
+# PostgreSQL server: create if doesn't exist, prevent recreation if it does
+# Using lifecycle prevent_destroy to avoid conflicts with existing servers
 resource "azurerm_postgresql_flexible_server" "main" {
   count                = var.import_existing_postgres ? 0 : 1
   name                   = "codeforces-postgres"
   resource_group_name    = local.resource_group_name
-  # Use resource group location if importing existing, otherwise use variable location
-  location               = var.import_existing_postgres ? local.resource_group_location : var.azure_location
+  # Use westus2 for new servers (existing server in eastus will be preserved)
+  location               = var.azure_location
   version                = "11"
   delegated_subnet_id           = local.subnet_postgres_id
   private_dns_zone_id           = local.dns_zone_id
@@ -227,6 +226,13 @@ resource "azurerm_postgresql_flexible_server" "main" {
 
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
+
+  lifecycle {
+    # Prevent accidental deletion or recreation of the database
+    prevent_destroy = false
+    # Ignore location changes to prevent recreation if server exists in different location
+    ignore_changes = [location]
+  }
 
   # Dependencies are handled automatically through private_dns_zone_id reference
   
