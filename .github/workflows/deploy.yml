@@ -263,6 +263,7 @@ jobs:
         
         echo "Setting import_existing_aks_cluster=$AKS_EXISTS"
         echo "Setting import_existing_postgres=$POSTGRES_EXISTS"
+        echo "DEBUG: About to run terraform plan with -var=import_existing_postgres=$POSTGRES_EXISTS"
         terraform plan -out=tfplan \
           -var="import_existing_resource_group=true" \
           -var="import_existing_vnet=true" \
