@@ -226,7 +226,11 @@ jobs:
         fi
         
         # Check if PostgreSQL server exists
-        echo "Checking if PostgreSQL server exists..."
+        echo "==== PostgreSQL Detection Start ===="
+        echo "Checking if Azure CLI is available..."
+        which az && az version || echo "Azure CLI not found or not working"
+        
+        echo "Attempting to query PostgreSQL server..."
         
         # Simple and reliable: try to get the server ID
         set +e  # Don't exit on error
@@ -234,20 +238,27 @@ jobs:
           --resource-group codeforces-rg \
           --name codeforces-postgres \
           --query id \
-          --output tsv 2>/dev/null)
+          --output tsv 2>&1)
         SHOW_EXIT_CODE=$?
         set -e  # Re-enable exit on error
         
-        if [ $SHOW_EXIT_CODE -eq 0 ] && [ -n "$POSTGRES_ID" ]; then
-          POSTGRES_LOCATION=$(az postgres flexible-server show --resource-group codeforces-rg --name codeforces-postgres --query location -o tsv 2>/dev/null)
-          echo "✓ PostgreSQL server EXISTS (ID: $POSTGRES_ID)"
-          echo "✓ Location: $POSTGRES_LOCATION"
+        echo "Query exit code: $SHOW_EXIT_CODE"
+        echo "Query output: $POSTGRES_ID"
+        
+        if [ $SHOW_EXIT_CODE -eq 0 ] && [ -n "$POSTGRES_ID" ] && [[ "$POSTGRES_ID" != *"ERROR"* ]] && [[ "$POSTGRES_ID" != *"not found"* ]]; then
+          POSTGRES_LOCATION=$(az postgres flexible-server show --resource-group codeforces-rg --name codeforces-postgres --query location -o tsv 2>/dev/null || echo "unknown")
+          echo "✓ PostgreSQL server EXISTS"
+          echo "  - ID: $POSTGRES_ID"
+          echo "  - Location: $POSTGRES_LOCATION"
           POSTGRES_EXISTS=true
         else
-          echo "✗ PostgreSQL server does not exist (exit code: $SHOW_EXIT_CODE)"
+          echo "✗ PostgreSQL server does NOT exist or query failed"
+          echo "  - Will create new server in westus2"
           POSTGRES_EXISTS=false
         fi
         
+        echo "==== PostgreSQL Detection End ===="
+        echo ""
         echo "Setting import_existing_aks_cluster=$AKS_EXISTS"
         echo "Setting import_existing_postgres=$POSTGRES_EXISTS"
         echo "DEBUG: About to run terraform plan with -var=import_existing_postgres=$POSTGRES_EXISTS"
