@@ -198,7 +198,20 @@ jobs:
     - name: Terraform Plan
       continue-on-error: true
       run: |
-        cd infrastructure/terraform/aws && terraform plan -out=tfplan -var="import_existing_iam_role=true" -var="import_existing_eks_cluster=true" -var="import_existing_vpc=true" || echo "AWS plan failed"
+        cd infrastructure/terraform/aws && \
+        # Check if EKS cluster exists
+        echo "Checking if EKS cluster exists..."
+        if aws eks describe-cluster --name codeforces-aws-cluster --region us-east-1 2>&1 | grep -q "ResourceNotFoundException"; then
+          echo "✗ EKS cluster does not exist, will create new"
+          EKS_EXISTS=false
+        else
+          echo "✓ EKS cluster exists, will use existing"
+          EKS_EXISTS=true
+        fi && \
+        terraform plan -out=tfplan \
+          -var="import_existing_iam_role=true" \
+          -var="import_existing_eks_cluster=$EKS_EXISTS" \
+          -var="import_existing_vpc=true" || echo "AWS plan failed"
         cd ../azure && \
         # Try to detect if PostgreSQL exists (in any location), otherwise create it
         # Note: Server exists in eastus, so we default to true if detection fails
@@ -244,7 +257,12 @@ jobs:
       if: github.ref == 'refs/heads/main'
       continue-on-error: true
       run: |
-        cd infrastructure/terraform/aws && terraform apply -auto-approve tfplan || echo "AWS apply failed"
+        cd infrastructure/terraform/aws && \
+        if [ -f tfplan ]; then
+          terraform apply -auto-approve tfplan || echo "AWS apply failed"
+        else
+          echo "⚠ AWS plan file not found, skipping apply"
+        fi
         cd ../azure && \
         if [ -f tfplan ]; then
           terraform apply -auto-approve tfplan || echo "Azure apply failed"
