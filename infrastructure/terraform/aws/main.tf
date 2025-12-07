@@ -13,8 +13,9 @@ provider "aws" {
 }
 
 # Get VPC from EKS cluster's subnet (more reliable than filtering by tag)
+# Only fetch this when BOTH VPC and EKS cluster are being imported
 data "aws_subnet" "eks_subnet" {
-  count = var.import_existing_vpc ? 1 : 0
+  count = var.import_existing_vpc && var.import_existing_eks_cluster ? 1 : 0
   id    = tolist(data.aws_eks_cluster.existing[0].vpc_config[0].subnet_ids)[0]
 }
 
@@ -83,7 +84,7 @@ resource "aws_iam_role" "eks_cluster" {
 # Data source for existing subnets (if importing)
 # Use subnets from EKS cluster directly
 data "aws_subnets" "existing" {
-  count = var.import_existing_vpc ? 1 : 0
+  count = var.import_existing_vpc && var.import_existing_eks_cluster ? 1 : 0
   filter {
     name   = "vpc-id"
     values = [data.aws_subnet.eks_subnet[0].vpc_id]

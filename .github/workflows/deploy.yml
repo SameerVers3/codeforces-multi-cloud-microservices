@@ -202,16 +202,18 @@ jobs:
         # Check if EKS cluster exists
         echo "Checking if EKS cluster exists..."
         if aws eks describe-cluster --name codeforces-aws-cluster --region us-east-1 2>&1 | grep -q "ResourceNotFoundException"; then
-          echo "✗ EKS cluster does not exist, will create new"
+          echo "✗ EKS cluster does not exist, will create new cluster and VPC"
           EKS_EXISTS=false
+          VPC_EXISTS=false
         else
-          echo "✓ EKS cluster exists, will use existing"
+          echo "✓ EKS cluster exists, will use existing cluster and VPC"
           EKS_EXISTS=true
+          VPC_EXISTS=true
         fi && \
         terraform plan -out=tfplan \
           -var="import_existing_iam_role=true" \
           -var="import_existing_eks_cluster=$EKS_EXISTS" \
-          -var="import_existing_vpc=true" || echo "AWS plan failed"
+          -var="import_existing_vpc=$VPC_EXISTS" || echo "AWS plan failed"
         cd ../azure && \
         # Try to detect if PostgreSQL exists (in any location), otherwise create it
         # Note: Server exists in eastus, so we default to true if detection fails
