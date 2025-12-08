@@ -310,14 +310,76 @@ jobs:
           VNET_EXISTS=false
         fi
         
+        # Check Public IP existence
+        echo "Checking for existing Public IP..."
+        if az network public-ip show --resource-group codeforces-rg --name codeforces-lb-ip --output none 2>/dev/null; then
+          echo "✓ Public IP 'codeforces-lb-ip' exists, will import"
+          PUBLIC_IP_EXISTS=true
+        else
+          echo "✗ Public IP does not exist, will create new"
+          PUBLIC_IP_EXISTS=false
+        fi
+        
+        # Check Subnet main existence
+        echo "Checking for existing Subnet main..."
+        if az network vnet subnet show --resource-group codeforces-rg --vnet-name codeforces-vnet --name codeforces-subnet --output none 2>/dev/null; then
+          echo "✓ Subnet 'codeforces-subnet' exists, will import"
+          SUBNET_MAIN_EXISTS=true
+        else
+          echo "✗ Subnet does not exist, will create new"
+          SUBNET_MAIN_EXISTS=false
+        fi
+        
+        # Check Subnet postgres existence
+        echo "Checking for existing Subnet postgres..."
+        if az network vnet subnet show --resource-group codeforces-rg --vnet-name codeforces-vnet --name codeforces-postgres-subnet --output none 2>/dev/null; then
+          echo "✓ Subnet postgres 'codeforces-postgres-subnet' exists, will import"
+          SUBNET_POSTGRES_EXISTS=true
+        else
+          echo "✗ Subnet postgres does not exist, will create new"
+          SUBNET_POSTGRES_EXISTS=false
+        fi
+        
+        # Check Private DNS Zone existence
+        echo "Checking for existing Private DNS Zone..."
+        if az network private-dns zone show --resource-group codeforces-rg --name codeforces-postgres.postgres.database.azure.com --output none 2>/dev/null; then
+          echo "✓ Private DNS Zone exists, will import"
+          DNS_ZONE_EXISTS=true
+        else
+          echo "✗ Private DNS Zone does not exist, will create new"
+          DNS_ZONE_EXISTS=false
+        fi
+        
+        # Check DNS VNet Link existence
+        echo "Checking for existing DNS VNet Link..."
+        if az network private-dns link vnet show --resource-group codeforces-rg --zone-name codeforces-postgres.postgres.database.azure.com --name codeforces-vnet-link --output none 2>/dev/null; then
+          echo "✓ DNS VNet Link exists, will import"
+          DNS_VNET_LINK_EXISTS=true
+        else
+          echo "✗ DNS VNet Link does not exist, will create new"
+          DNS_VNET_LINK_EXISTS=false
+        fi
+        
+        # Check Load Balancer existence
+        echo "Checking for existing Load Balancer..."
+        if az network lb show --resource-group codeforces-rg --name codeforces-lb --output none 2>/dev/null; then
+          echo "✓ Load Balancer exists, will import"
+          LB_EXISTS=true
+        else
+          echo "✗ Load Balancer does not exist, will create new"
+          LB_EXISTS=false
+        fi
+        
         terraform plan -out=tfplan \
           -var="import_existing_resource_group=$RG_EXISTS" \
           -var="import_existing_vnet=$VNET_EXISTS" \
-          -var="import_existing_public_ip=false" \
-          -var="import_existing_subnet_main=false" \
-          -var="import_existing_subnet_postgres=false" \
+          -var="import_existing_public_ip=$PUBLIC_IP_EXISTS" \
+          -var="import_existing_subnet_main=$SUBNET_MAIN_EXISTS" \
+          -var="import_existing_subnet_postgres=$SUBNET_POSTGRES_EXISTS" \
           -var="import_existing_aks_cluster=$AKS_EXISTS" \
-          -var="import_existing_dns_zone=false" \
+          -var="import_existing_dns_zone=$DNS_ZONE_EXISTS" \
+          -var="import_existing_dns_vnet_link=$DNS_VNET_LINK_EXISTS" \
+          -var="import_existing_lb=$LB_EXISTS" \
           -var="import_existing_dns_vnet_link=false" \
           -var="import_existing_lb=false" \
           -var="import_existing_postgres=$POSTGRES_EXISTS" \
