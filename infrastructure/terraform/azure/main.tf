@@ -270,15 +270,15 @@ resource "azurerm_lb" "main" {
 
 # Load Balancer Backend Address Pool for AKS
 resource "azurerm_lb_backend_address_pool" "aks" {
-  count           = var.import_existing_lb ? 0 : 1
-  loadbalancer_id = azurerm_lb.main[0].id
+  count           = var.import_existing_lb ? 1 : 1
+  loadbalancer_id = var.import_existing_lb ? data.azurerm_lb.existing[0].id : azurerm_lb.main[0].id
   name            = "aks-backend-pool"
 }
 
 # Load Balancer Health Probe
 resource "azurerm_lb_probe" "aks" {
-  count           = var.import_existing_lb ? 0 : 1
-  loadbalancer_id = azurerm_lb.main[0].id
+  count           = var.import_existing_lb ? 1 : 1
+  loadbalancer_id = var.import_existing_lb ? data.azurerm_lb.existing[0].id : azurerm_lb.main[0].id
   name            = "aks-health-probe"
   protocol        = "Http"
   port            = 8000
@@ -287,8 +287,8 @@ resource "azurerm_lb_probe" "aks" {
 
 # Load Balancer Rule for HTTP (port 80 -> 8000)
 resource "azurerm_lb_rule" "http" {
-  count                          = var.import_existing_lb ? 0 : 1
-  loadbalancer_id                = azurerm_lb.main[0].id
+  count                          = var.import_existing_lb ? 1 : 1
+  loadbalancer_id                = var.import_existing_lb ? data.azurerm_lb.existing[0].id : azurerm_lb.main[0].id
   name                           = "HTTPRule"
   protocol                       = "Tcp"
   frontend_port                  = 80
