@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    const contestServiceUrl = process.env.CONTEST_SERVICE_URL || 'http://contest-service.codeforces.svc.cluster.local:80';
+    // Use internal cluster DNS for API routes (always available at runtime)
+    const contestServiceUrl = 'http://contest-service.codeforces.svc.cluster.local:80';
     
     const response = await fetch(`${contestServiceUrl}/api/v1/contests/`, {
       method: 'GET',

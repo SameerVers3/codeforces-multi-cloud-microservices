@@ -4,7 +4,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service.codeforces.svc.cluster.local:80';
+    // Use internal cluster DNS for API routes (always available at runtime)
+    const authServiceUrl = 'http://auth-service.codeforces.svc.cluster.local:80';
     
     const response = await fetch(`${authServiceUrl}/api/v1/auth/register`, {
       method: 'POST',
