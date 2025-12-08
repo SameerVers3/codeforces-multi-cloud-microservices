@@ -11,7 +11,18 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const data = await response.json();
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType?.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      return NextResponse.json(
+        { detail: `Backend returned non-JSON response: ${text.substring(0, 200)}` },
+        { status: 502 }
+      );
+    }
     
     return NextResponse.json(data, { status: response.status });
   } catch (error: any) {
