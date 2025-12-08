@@ -268,33 +268,14 @@ resource "azurerm_lb" "main" {
   depends_on = [azurerm_public_ip.main]
 }
 
-# Load Balancer Backend Address Pool for AKS
-# Data source to check if backend pool exists (if importing)
-data "azurerm_lb_backend_address_pool" "aks" {
-  count           = var.import_existing_lb ? 1 : 0
-  name            = "aks-backend-pool"
-  loadbalancer_id = data.azurerm_lb.existing[0].id
-}
-
+# Load Balancer Backend Address Pool for AKS (created only when not importing)
 resource "azurerm_lb_backend_address_pool" "aks" {
   count           = var.import_existing_lb ? 0 : 1
   loadbalancer_id = azurerm_lb.main[0].id
   name            = "aks-backend-pool"
 }
 
-# Use either imported or created backend pool
-locals {
-  lb_backend_pool_id = var.import_existing_lb ? data.azurerm_lb_backend_address_pool.aks[0].id : azurerm_lb_backend_address_pool.aks[0].id
-}
-
-# Load Balancer Health Probe
-# Data source to check if probe exists (if importing)
-data "azurerm_lb_probe" "aks" {
-  count           = var.import_existing_lb ? 1 : 0
-  name            = "aks-health-probe"
-  loadbalancer_id = data.azurerm_lb.existing[0].id
-}
-
+# Load Balancer Health Probe (created only when not importing)
 resource "azurerm_lb_probe" "aks" {
   count           = var.import_existing_lb ? 0 : 1
   loadbalancer_id = azurerm_lb.main[0].id
@@ -304,19 +285,7 @@ resource "azurerm_lb_probe" "aks" {
   request_path    = "/health"
 }
 
-# Use either imported or created probe
-locals {
-  lb_probe_id = var.import_existing_lb ? data.azurerm_lb_probe.aks[0].id : azurerm_lb_probe.aks[0].id
-}
-
-# Load Balancer Rule for HTTP (port 80 -> 8000)
-# Data source to check if rule exists (if importing)
-data "azurerm_lb_rule" "http" {
-  count              = var.import_existing_lb ? 1 : 0
-  name               = "HTTPRule"
-  loadbalancer_id    = data.azurerm_lb.existing[0].id
-}
-
+# Load Balancer Rule for HTTP (port 80 -> 8000) (created only when not importing)
 resource "azurerm_lb_rule" "http" {
   count                          = var.import_existing_lb ? 0 : 1
   loadbalancer_id                = azurerm_lb.main[0].id
@@ -325,7 +294,7 @@ resource "azurerm_lb_rule" "http" {
   frontend_port                  = 80
   backend_port                   = 8000
   frontend_ip_configuration_name = "PublicIPAddress"
-  backend_address_pool_ids       = [local.lb_backend_pool_id]
-  probe_id                       = local.lb_probe_id
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.aks[0].id]
+  probe_id                       = azurerm_lb_probe.aks[0].id
 }
 
