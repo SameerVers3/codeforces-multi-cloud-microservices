@@ -74,6 +74,9 @@ metadata:
   namespace: codeforces
   labels:
     app: auth-service
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: "codeforces-rg"
+    service.beta.kubernetes.io/azure-load-balancer-internal: "false"
 spec:
   selector:
     app: auth-service

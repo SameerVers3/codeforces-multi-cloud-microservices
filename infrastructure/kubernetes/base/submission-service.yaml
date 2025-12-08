@@ -37,11 +37,20 @@ spec:
               name: rabbitmq-secret
               key: url
         - name: AUTH_SERVICE_URL
-          value: "http://auth-service.codeforces.svc.cluster.local:80"
+          valueFrom:
+            configMapKeyRef:
+              name: submission-service-config
+              key: AUTH_SERVICE_URL
         - name: CONTEST_SERVICE_URL
-          value: "http://contest-service.codeforces.svc.cluster.local:80"
+          valueFrom:
+            configMapKeyRef:
+              name: submission-service-config
+              key: CONTEST_SERVICE_URL
         - name: EXECUTION_SERVICE_URL
-          value: "http://execution-service.codeforces.svc.cluster.local:80"
+          valueFrom:
+            configMapKeyRef:
+              name: submission-service-config
+              key: EXECUTION_SERVICE_URL
         resources:
           requests:
             memory: "256Mi"

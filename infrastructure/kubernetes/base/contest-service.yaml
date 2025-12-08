@@ -65,6 +65,9 @@ metadata:
   namespace: codeforces
   labels:
     app: contest-service
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: "codeforces-rg"
+    service.beta.kubernetes.io/azure-load-balancer-internal: "false"
 spec:
   selector:
     app: contest-service

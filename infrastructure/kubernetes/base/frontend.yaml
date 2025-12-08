@@ -24,15 +24,31 @@ spec:
         ports:
         - containerPort: 3000
           name: http
+        envFrom:
+        - configMapRef:
+            name: frontend-config
         env:
+        # Map ConfigMap values to NEXT_PUBLIC_ variables (exposed to browser)
         - name: NEXT_PUBLIC_AUTH_SERVICE_URL
-          value: "http://auth-service.codeforces.svc.cluster.local:80"
+          valueFrom:
+            configMapKeyRef:
+              name: frontend-config
+              key: AUTH_SERVICE_URL
         - name: NEXT_PUBLIC_CONTEST_SERVICE_URL
-          value: "http://contest-service.codeforces.svc.cluster.local:80"
+          valueFrom:
+            configMapKeyRef:
+              name: frontend-config
+              key: CONTEST_SERVICE_URL
         - name: NEXT_PUBLIC_SUBMISSION_SERVICE_URL
-          value: "http://submission-service.codeforces.svc.cluster.local:80"
+          valueFrom:
+            configMapKeyRef:
+              name: frontend-config
+              key: SUBMISSION_SERVICE_URL
         - name: NEXT_PUBLIC_LEADERBOARD_SERVICE_URL
-          value: "http://leaderboard-service.codeforces.svc.cluster.local:80"
+          valueFrom:
+            configMapKeyRef:
+              name: frontend-config
+              key: LEADERBOARD_SERVICE_URL
         resources:
           requests:
             memory: "256Mi"

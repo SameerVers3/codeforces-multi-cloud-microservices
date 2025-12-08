@@ -5,11 +5,15 @@ namespace: codeforces
 
 resources:
   - namespace.yaml
+  - rabbitmq.yaml
+  - redis.yaml
   - auth-service.yaml
   - contest-service.yaml
+  - submission-service-configmap.yaml
   - submission-service.yaml
   - execution-service.yaml
   - scoring-service.yaml
   - leaderboard-service.yaml
+  - frontend-configmap.yaml
   - frontend.yaml
 

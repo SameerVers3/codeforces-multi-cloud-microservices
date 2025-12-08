@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: submission-service-config
+  namespace: codeforces
+data:
+  # Azure service URLs - Update these after deployment with actual LoadBalancer IPs
+  # Get IPs using:
+  # Azure: kubectl get svc auth-service -n codeforces -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+  # Azure: kubectl get svc contest-service -n codeforces -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+  AUTH_SERVICE_URL: "http://CHANGE_ME_AUTH_SERVICE_IP"
+  CONTEST_SERVICE_URL: "http://CHANGE_ME_CONTEST_SERVICE_IP"
+  # AWS service URLs (internal DNS works within same cluster)
+  EXECUTION_SERVICE_URL: "http://execution-service.codeforces.svc.cluster.local:80"
+
