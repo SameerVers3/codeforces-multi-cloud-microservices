@@ -107,6 +107,11 @@ jobs:
         tags: |
           ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-frontend:${{ github.sha }}
           ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/codeforces-frontend:latest
+        build-args: |
+          NEXT_PUBLIC_AUTH_SERVICE_URL=http://auth-service.codeforces.svc.cluster.local:80
+          NEXT_PUBLIC_CONTEST_SERVICE_URL=http://contest-service.codeforces.svc.cluster.local:80
+          NEXT_PUBLIC_SUBMISSION_SERVICE_URL=http://submission-service.codeforces.svc.cluster.local:80
+          NEXT_PUBLIC_LEADERBOARD_SERVICE_URL=http://leaderboard-service.codeforces.svc.cluster.local:80
         cache-from: type=gha
         cache-to: type=gha,mode=max
         platforms: linux/amd64

@@ -9,6 +9,19 @@ RUN npm install
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+
+# Build arguments for service URLs
+ARG NEXT_PUBLIC_AUTH_SERVICE_URL=http://auth-service.codeforces.svc.cluster.local:80
+ARG NEXT_PUBLIC_CONTEST_SERVICE_URL=http://contest-service.codeforces.svc.cluster.local:80
+ARG NEXT_PUBLIC_SUBMISSION_SERVICE_URL=http://submission-service.codeforces.svc.cluster.local:80
+ARG NEXT_PUBLIC_LEADERBOARD_SERVICE_URL=http://leaderboard-service.codeforces.svc.cluster.local:80
+
+# Make build args available as env vars during build
+ENV NEXT_PUBLIC_AUTH_SERVICE_URL=$NEXT_PUBLIC_AUTH_SERVICE_URL
+ENV NEXT_PUBLIC_CONTEST_SERVICE_URL=$NEXT_PUBLIC_CONTEST_SERVICE_URL
+ENV NEXT_PUBLIC_SUBMISSION_SERVICE_URL=$NEXT_PUBLIC_SUBMISSION_SERVICE_URL
+ENV NEXT_PUBLIC_LEADERBOARD_SERVICE_URL=$NEXT_PUBLIC_LEADERBOARD_SERVICE_URL
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
