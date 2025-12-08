@@ -289,16 +289,37 @@ jobs:
         echo "Setting import_existing_postgres=$POSTGRES_EXISTS"
         echo "Setting allow_postgres_lookup=$POSTGRES_LOOKUP"
         echo "Setting azure_location=$POSTGRES_LOCATION (using PostgreSQL server location)"
+        
+        # Check Azure resource group existence
+        echo "Checking for existing Azure resource group..."
+        if az group show --name codeforces-rg --output none 2>/dev/null; then
+          echo "✓ Resource group 'codeforces-rg' exists, will import"
+          RG_EXISTS=true
+        else
+          echo "✗ Resource group does not exist, will create new"
+          RG_EXISTS=false
+        fi
+        
+        # Check VNet existence
+        echo "Checking for existing VNet..."
+        if az network vnet show --resource-group codeforces-rg --name codeforces-vnet --output none 2>/dev/null; then
+          echo "✓ VNet 'codeforces-vnet' exists, will import"
+          VNET_EXISTS=true
+        else
+          echo "✗ VNet does not exist, will create new"
+          VNET_EXISTS=false
+        fi
+        
         terraform plan -out=tfplan \
-          -var="import_existing_resource_group=true" \
-          -var="import_existing_vnet=true" \
-          -var="import_existing_public_ip=true" \
-          -var="import_existing_subnet_main=true" \
-          -var="import_existing_subnet_postgres=true" \
+          -var="import_existing_resource_group=$RG_EXISTS" \
+          -var="import_existing_vnet=$VNET_EXISTS" \
+          -var="import_existing_public_ip=false" \
+          -var="import_existing_subnet_main=false" \
+          -var="import_existing_subnet_postgres=false" \
           -var="import_existing_aks_cluster=$AKS_EXISTS" \
-          -var="import_existing_dns_zone=true" \
-          -var="import_existing_dns_vnet_link=true" \
-          -var="import_existing_lb=true" \
+          -var="import_existing_dns_zone=false" \
+          -var="import_existing_dns_vnet_link=false" \
+          -var="import_existing_lb=false" \
           -var="import_existing_postgres=$POSTGRES_EXISTS" \
           -var="allow_postgres_lookup=$POSTGRES_LOOKUP" \
           -var="postgres_server_id=${POSTGRES_SERVER_ID:-}" \
