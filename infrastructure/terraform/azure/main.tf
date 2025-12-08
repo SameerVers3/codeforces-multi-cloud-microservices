@@ -290,7 +290,7 @@ resource "azurerm_lb_rule" "http" {
   count                          = var.import_existing_lb ? 0 : 1
   loadbalancer_id                = azurerm_lb.main[0].id
   name                           = "HTTPRule"
-  protocol                       = "TCP"
+  protocol                       = "Tcp"
   frontend_port                  = 80
   backend_port                   = 8000
   frontend_ip_configuration_name = "PublicIPAddress"
