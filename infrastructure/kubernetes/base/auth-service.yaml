@@ -82,8 +82,11 @@ spec:
   type: LoadBalancer
   selector:
     app: auth-service
+  sessionAffinity: None
+  externalTrafficPolicy: Local
   ports:
   - protocol: TCP
     port: 80
     targetPort: 8000
+    name: http
 
