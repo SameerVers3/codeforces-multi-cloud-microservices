@@ -251,13 +251,6 @@ data "azurerm_lb" "existing" {
   resource_group_name = local.resource_group_name
 }
 
-# Data source for existing load balancer (if importing)
-data "azurerm_lb" "existing" {
-  count               = var.import_existing_lb ? 1 : 0
-  name                = "codeforces-lb"
-  resource_group_name = local.resource_group_name
-}
-
 # Load Balancer
 # If load balancer already exists, set import_existing_lb = true
 resource "azurerm_lb" "main" {
@@ -273,5 +266,35 @@ resource "azurerm_lb" "main" {
   }
 
   depends_on = [azurerm_public_ip.main]
+}
+
+# Load Balancer Backend Address Pool for AKS
+resource "azurerm_lb_backend_address_pool" "aks" {
+  count           = var.import_existing_lb ? 0 : 1
+  loadbalancer_id = azurerm_lb.main[0].id
+  name            = "aks-backend-pool"
+}
+
+# Load Balancer Health Probe
+resource "azurerm_lb_probe" "aks" {
+  count           = var.import_existing_lb ? 0 : 1
+  loadbalancer_id = azurerm_lb.main[0].id
+  name            = "aks-health-probe"
+  protocol        = "HTTP"
+  port            = 8000
+  request_path    = "/health"
+}
+
+# Load Balancer Rule for HTTP (port 80 -> 8000)
+resource "azurerm_lb_rule" "http" {
+  count                          = var.import_existing_lb ? 0 : 1
+  loadbalancer_id                = azurerm_lb.main[0].id
+  name                           = "HTTPRule"
+  protocol                       = "TCP"
+  frontend_port                  = 80
+  backend_port                   = 8000
+  frontend_ip_configuration_name = "PublicIPAddress"
+  backend_address_pool_ids       = [azurerm_lb_backend_address_pool.aks[0].id]
+  probe_id                       = azurerm_lb_probe.aks[0].id
 }
 
