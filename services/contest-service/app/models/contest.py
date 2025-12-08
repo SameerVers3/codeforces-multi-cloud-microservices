@@ -12,7 +12,8 @@ class Contest(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title = Column(String(255), nullable=False)
     description = Column(Text)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id", use_alter=True, name="fk_contest_created_by"), nullable=False, index=True)
+    # Store creator user id without enforcing FK to decouple from auth schema
+    created_by = Column(UUID(as_uuid=True), nullable=False, index=True)
     start_time = Column(DateTime(timezone=True), nullable=False, index=True)
     end_time = Column(DateTime(timezone=True), nullable=False, index=True)
     duration_minutes = Column(Integer, nullable=False)
