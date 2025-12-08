@@ -13,7 +13,7 @@ export default function Home() {
 
   const fetchContests = async () => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_CONTEST_SERVICE_URL}/api/v1/contests/`)
+      const response = await axios.get('/api/contests')
       setContests(response.data)
     } catch (error) {
       console.error('Error fetching contests:', error)

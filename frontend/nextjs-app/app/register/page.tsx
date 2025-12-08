@@ -21,10 +21,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/v1/auth/register`,
-        formData
-      );
+      await axios.post('/api/auth/register', formData);
       router.push('/login');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Registration failed');

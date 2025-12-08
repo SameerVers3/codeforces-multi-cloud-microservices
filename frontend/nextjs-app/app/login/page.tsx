@@ -22,7 +22,7 @@ export default function LoginPage() {
       formData.append('password', password);
 
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/v1/auth/login`,
+        '/api/auth/login',
         formData,
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
