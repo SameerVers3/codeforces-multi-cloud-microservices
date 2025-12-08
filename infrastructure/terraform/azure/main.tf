@@ -280,7 +280,7 @@ resource "azurerm_lb_probe" "aks" {
   count           = var.import_existing_lb ? 0 : 1
   loadbalancer_id = azurerm_lb.main[0].id
   name            = "aks-health-probe"
-  protocol        = "HTTP"
+  protocol        = "Http"
   port            = 8000
   request_path    = "/health"
 }
