@@ -357,13 +357,14 @@ jobs:
         fi
         echo "DNS_VNET_LINK_EXISTS=$DNS_VNET_LINK_EXISTS"
         
-        # Check Load Balancer existence - default to true if detection fails
+        # Check Load Balancer existence - default to false (recreate to fix public IP config)
         echo "Checking for existing Load Balancer..."
-        LB_EXISTS=true
-        if ! az network lb list --resource-group codeforces-rg 2>/dev/null | grep -q "codeforces-lb"; then
-          LB_EXISTS=false
-        fi
-        echo "LB_EXISTS=$LB_EXISTS"
+        LB_EXISTS=false
+        # Even if LB exists, don't import it - recreate with proper public IP config
+        # if az network lb list --resource-group codeforces-rg 2>/dev/null | grep -q "codeforces-lb"; then
+        #   LB_EXISTS=true
+        # fi
+        echo "LB_EXISTS=$LB_EXISTS (always false - LB will be recreated)"
         
         terraform plan -out=tfplan \
           -var="import_existing_resource_group=$RG_EXISTS" \

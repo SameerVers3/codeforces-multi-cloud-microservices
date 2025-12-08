@@ -15,6 +15,11 @@ output "postgresql_fqdn" {
 
 output "lb_public_ip" {
   description = "Load balancer public IP"
-  value       = var.import_existing_public_ip ? data.azurerm_public_ip.existing[0].ip_address : (length(azurerm_public_ip.main) > 0 ? azurerm_public_ip.main[0].ip_address : null)
+  value       = var.import_existing_public_ip ? data.azurerm_public_ip.existing[0].ip_address : (length(azurerm_public_ip.main) > 0 ? azurerm_public_ip.main[0].ip_address : "Pending")
+}
+
+output "lb_public_ip_id" {
+  description = "Load balancer public IP resource ID"
+  value       = local.public_ip_id
 }
 

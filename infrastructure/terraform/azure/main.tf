@@ -251,6 +251,13 @@ data "azurerm_lb" "existing" {
   resource_group_name = local.resource_group_name
 }
 
+# Data source for existing load balancer (if importing)
+data "azurerm_lb" "existing" {
+  count               = var.import_existing_lb ? 1 : 0
+  name                = "codeforces-lb"
+  resource_group_name = local.resource_group_name
+}
+
 # Load Balancer
 # If load balancer already exists, set import_existing_lb = true
 resource "azurerm_lb" "main" {
@@ -264,5 +271,7 @@ resource "azurerm_lb" "main" {
     name                 = "PublicIPAddress"
     public_ip_address_id = local.public_ip_id
   }
+
+  depends_on = [azurerm_public_ip.main]
 }
 
