@@ -76,14 +76,11 @@ metadata:
   namespace: codeforces
   labels:
     app: auth-service
-  annotations:
-    service.beta.kubernetes.io/azure-load-balancer-internal: "false"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: auth-service
   sessionAffinity: None
-  externalTrafficPolicy: Local
   ports:
   - protocol: TCP
     port: 80
