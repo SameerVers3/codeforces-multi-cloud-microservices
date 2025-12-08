@@ -4,12 +4,9 @@ metadata:
   name: frontend-config
   namespace: codeforces
 data:
-  # Service URLs - Update these after deployment with actual IPs
-  # Get IPs using:
-  # Azure: kubectl get svc auth-service -n codeforces -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
-  # Azure: kubectl get svc contest-service -n codeforces -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
-  AUTH_SERVICE_URL: "http://CHANGE_ME_AUTH_SERVICE_IP"
-  CONTEST_SERVICE_URL: "http://CHANGE_ME_CONTEST_SERVICE_IP"
+  # Service URLs - using internal cluster DNS for ClusterIP services
+  AUTH_SERVICE_URL: "http://auth-service.codeforces.svc.cluster.local:80"
+  CONTEST_SERVICE_URL: "http://contest-service.codeforces.svc.cluster.local:80"
   SUBMISSION_SERVICE_URL: "http://submission-service.codeforces.svc.cluster.local:80"
   LEADERBOARD_SERVICE_URL: "http://leaderboard-service.codeforces.svc.cluster.local:80"
 
