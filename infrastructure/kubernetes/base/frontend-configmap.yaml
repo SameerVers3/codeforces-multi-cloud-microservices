@@ -5,8 +5,9 @@ metadata:
   namespace: codeforces
 data:
   # Service URLs - using internal cluster DNS for ClusterIP services
-  AUTH_SERVICE_URL: "http://auth-service.codeforces.svc.cluster.local:80"
-  CONTEST_SERVICE_URL: "http://contest-service.codeforces.svc.cluster.local:80"
-  SUBMISSION_SERVICE_URL: "http://submission-service.codeforces.svc.cluster.local:80"
-  LEADERBOARD_SERVICE_URL: "http://leaderboard-service.codeforces.svc.cluster.local:80"
+  # Point browser-visible calls to the public frontend LB; API routes proxy internally
+  AUTH_SERVICE_URL: "http://48.195.180.138/api/auth"
+  CONTEST_SERVICE_URL: "http://48.195.180.138/api/contests"
+  SUBMISSION_SERVICE_URL: "http://48.195.180.138/api"
+  LEADERBOARD_SERVICE_URL: "http://48.195.180.138/api"
 
