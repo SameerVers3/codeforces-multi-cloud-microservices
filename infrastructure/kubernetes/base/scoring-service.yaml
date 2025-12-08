@@ -20,7 +20,7 @@ spec:
       serviceAccountName: codeforces-service-account
       containers:
       - name: scoring-service
-        image: ghcr.io/sameervers3/codeforces-multi-cloud-microservices/scoring-service:latest
+        image: ghcr.io/sameervers3/codeforces-scoring-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000

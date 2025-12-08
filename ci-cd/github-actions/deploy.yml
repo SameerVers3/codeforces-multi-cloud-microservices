@@ -35,7 +35,7 @@ jobs:
       with:
         context: ./services/${{ matrix.service }}
         push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest,${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
+        tags: ${{ env.REGISTRY }}/sameervers3/codeforces-${{ matrix.service }}:latest,${{ env.REGISTRY }}/sameervers3/codeforces-${{ matrix.service }}:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
@@ -60,7 +60,7 @@ jobs:
       with:
         context: ./frontend/nextjs-app
         push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/codeforces-frontend:latest,${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/codeforces-frontend:${{ github.sha }}
+        tags: ${{ env.REGISTRY }}/sameervers3/codeforces-frontend:latest,${{ env.REGISTRY }}/sameervers3/codeforces-frontend:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
@@ -78,13 +78,13 @@ jobs:
         az aks get-credentials --resource-group codeforces-rg --name codeforces-aks-cluster
         
         # Update image tags in deployments
-        kubectl set image deployment/frontend frontend=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/codeforces-frontend:latest -n codeforces || true
-        kubectl set image deployment/auth-service auth-service=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/auth-service:latest -n codeforces || true
-        kubectl set image deployment/contest-service contest-service=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/contest-service:latest -n codeforces || true
-        kubectl set image deployment/submission-service submission-service=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/submission-service:latest -n codeforces || true
-        kubectl set image deployment/execution-service execution-service=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/execution-service:latest -n codeforces || true
-        kubectl set image deployment/scoring-service scoring-service=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/scoring-service:latest -n codeforces || true
-        kubectl set image deployment/leaderboard-service leaderboard-service=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/leaderboard-service:latest -n codeforces || true
+        kubectl set image deployment/frontend frontend=${{ env.REGISTRY }}/sameervers3/codeforces-frontend:latest -n codeforces || true
+        kubectl set image deployment/auth-service auth-service=${{ env.REGISTRY }}/sameervers3/codeforces-auth-service:latest -n codeforces || true
+        kubectl set image deployment/contest-service contest-service=${{ env.REGISTRY }}/sameervers3/codeforces-contest-service:latest -n codeforces || true
+        kubectl set image deployment/submission-service submission-service=${{ env.REGISTRY }}/sameervers3/codeforces-submission-service:latest -n codeforces || true
+        kubectl set image deployment/execution-service execution-service=${{ env.REGISTRY }}/sameervers3/codeforces-execution-service:latest -n codeforces || true
+        kubectl set image deployment/scoring-service scoring-service=${{ env.REGISTRY }}/sameervers3/codeforces-scoring-service:latest -n codeforces || true
+        kubectl set image deployment/leaderboard-service leaderboard-service=${{ env.REGISTRY }}/sameervers3/codeforces-leaderboard-service:latest -n codeforces || true
         
         # Wait for rollout
         kubectl rollout status deployment/frontend -n codeforces --timeout=3m
