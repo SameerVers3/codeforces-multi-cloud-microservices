@@ -11,7 +11,7 @@ class ContestRegistration(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     contest_id = Column(UUID(as_uuid=True), ForeignKey("contests.id"), nullable=False, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", use_alter=True, name="fk_registration_user_id"), nullable=False, index=True)
     registered_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
