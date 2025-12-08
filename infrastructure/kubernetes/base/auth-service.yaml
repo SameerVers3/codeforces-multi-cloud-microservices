@@ -20,7 +20,7 @@ spec:
       serviceAccountName: codeforces-service-account
       containers:
       - name: auth-service
-        image: ghcr.io/sameervers3/codeforces-auth-service:latest
+        image: ghcr.io/sameervers3/codeforces-multi-cloud-microservices/auth-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000

@@ -20,7 +20,7 @@ spec:
       serviceAccountName: codeforces-service-account
       containers:
       - name: contest-service
-        image: ghcr.io/sameervers3/codeforces-contest-service:latest
+        image: ghcr.io/sameervers3/codeforces-multi-cloud-microservices/contest-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000

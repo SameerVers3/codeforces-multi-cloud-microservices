@@ -20,7 +20,7 @@ spec:
       serviceAccountName: codeforces-service-account
       containers:
       - name: submission-service
-        image: ghcr.io/sameervers3/codeforces-submission-service:latest
+        image: ghcr.io/sameervers3/codeforces-multi-cloud-microservices/submission-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000

@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/sameervers3/codeforces-frontend:latest
+        image: ghcr.io/sameervers3/codeforces-multi-cloud-microservices/codeforces-frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000

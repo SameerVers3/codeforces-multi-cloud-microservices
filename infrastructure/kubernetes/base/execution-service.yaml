@@ -20,7 +20,7 @@ spec:
       serviceAccountName: codeforces-service-account
       containers:
       - name: execution-service
-        image: ghcr.io/sameervers3/codeforces-execution-service:latest
+        image: ghcr.io/sameervers3/codeforces-multi-cloud-microservices/execution-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
