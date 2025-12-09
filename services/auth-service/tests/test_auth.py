@@ -48,7 +48,7 @@ def test_login_success():
     )
     response = client.post(
         "/api/v1/auth/login",
-        data={
+        json={
             "username": "logintest",
             "password": "testpass123"
         }
@@ -59,7 +59,7 @@ def test_login_success():
 def test_login_invalid_credentials():
     response = client.post(
         "/api/v1/auth/login",
-        data={
+        json={
             "username": "nonexistent",
             "password": "wrongpass"
         }
@@ -82,7 +82,7 @@ def test_get_current_user_with_token():
     )
     login_response = client.post(
         "/api/v1/auth/login",
-        data={
+        json={
             "username": "meuser",
             "password": "testpass123"
         }
