@@ -17,14 +17,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const formData = new URLSearchParams();
-      formData.append('username', username);
-      formData.append('password', password);
-
       const response = await axios.post(
         '/api/auth/login',
-        formData,
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        { username, password },
+        { headers: { 'Content-Type': 'application/json' } }
       );
 
       localStorage.setItem('access_token', response.data.access_token);
